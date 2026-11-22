@@ -87,6 +87,17 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
 #sbar .xp i{display:block;height:100%;background:linear-gradient(180deg,#6fd07f,#2f7f3f)}
 #sbar .xt{font-size:10px;color:#a8987a;margin-top:3px}
 #sbar .gold{text-align:right;font-size:11px;color:#a8987a;flex:none}#sbar .gold b{display:block;font-size:16px;color:#ffe27a}
+#sbar .switch-hint{display:block;margin-top:4px;padding:2px 5px;border:1px solid #b8924c;border-radius:8px;color:#ffe6a8;font-size:11px;letter-spacing:0;white-space:nowrap}
+#hero-switch{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(5,3,2,.68)}
+#hero-switch .panel{width:min(350px,100%);max-height:min(78dvh,520px);padding:14px;box-sizing:border-box;display:flex;flex-direction:column}
+#hero-switch h2{margin:0 0 10px;text-align:center;color:#ffe6a8;font:20px "Noto Serif TC","PMingLiU",serif;letter-spacing:3px}
+#hero-switch-list{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:2px}
+.hero-option{min-height:56px;display:flex;align-items:center;gap:8px;padding:5px 7px;border:1px solid #7a5a30;border-radius:7px;background:rgba(19,12,8,.82);color:#f1e6d2;cursor:pointer;box-sizing:border-box}
+.hero-option.current{border-color:#ffe6a8;box-shadow:inset 0 0 0 1px #2a1a0c,0 0 10px rgba(255,214,140,.45)}
+.hero-option .slot{position:relative;width:54px;height:60px;flex:none;border-radius:6px;background:radial-gradient(ellipse at 50% 85%,rgba(255,214,140,.16),rgba(0,0,0,0) 70%)}
+.hero-option .im{position:absolute;left:50%;background-size:100% 100%;background-repeat:no-repeat;image-rendering:pixelated;transform:scaleX(-1)}
+.hero-option .info{flex:1;min-width:0}.hero-option .name{font-weight:bold;color:#fff3d4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hero-option .lv{margin-left:5px;color:#ffe6a8;font-size:11px}.hero-option .xp{height:5px;margin-top:4px;border:1px solid #4a3018;border-radius:4px;background:rgba(0,0,0,.55);overflow:hidden}.hero-option .xp i{display:block;height:100%;background:linear-gradient(180deg,#6fd07f,#2f7f3f)}.hero-option .state{flex:none;color:#a8987a;font-size:10px;white-space:nowrap}.hero-option.current .state{color:#ffe6a8}
+#hero-switch-close{flex:none;height:40px;margin-top:10px;border:1px solid #7a5a30;border-radius:7px;background:linear-gradient(180deg,#4a3420,#241710);color:#fff3d4;font-size:14px;cursor:pointer}
 #nodes{flex:1;min-height:0;overflow-y:auto;margin:8px 0;padding:2px;display:flex;flex-direction:column;gap:7px}
 .nd{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;flex:none;position:relative}
 .nd .no{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;color:#fff3d4;flex:none;
@@ -167,20 +178,30 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
 <script>
 (function () {
   var box = document.getElementById('loading'), fill = box.querySelector('.fill'), pct = box.querySelector('.percent');
-  window.__showLoading = function () {
+window.__showLoading = function () {
     if (new URLSearchParams(location.search).get('sim')) return;
-    box.classList.remove('hide'); box.classList.add('preparing'); box.style.display = 'flex'; fill.style.width = '34%'; pct.textContent = '準備中';
-  };
-  window.__setLoading = function (value) {
+box.classList.remove('hide');
+box.classList.add('preparing');
+box.style.display = 'flex';
+fill.style.width = '34%';
+pct.textContent = '準備中';
+};
+window.__setLoading = function (value) {
     if (new URLSearchParams(location.search).get('sim')) return;
-    var n = Math.max(0, Math.min(1, Number(value) || 0));
-    box.classList.remove('preparing'); fill.style.width = (n * 100).toFixed(1) + '%'; pct.textContent = Math.round(n * 100) + '%';
-  };
-  window.__hideLoading = function () {
+var n = Math.max(0, Math.min(1, Number(value) || 0));
+box.classList.remove('preparing');
+fill.style.width = (n * 100).toFixed(1) + '%';
+pct.textContent = Math.round(n * 100) + '%';
+};
+window.__hideLoading = function () {
     if (new URLSearchParams(location.search).get('sim')) return;
-    box.classList.remove('preparing'); fill.style.width = '100%'; pct.textContent = '100%'; box.classList.add('hide');
-    setTimeout(function () { box.style.display = 'none'; }, 380);
-  };
+box.classList.remove('preparing');
+fill.style.width = '100%';
+pct.textContent = '100%';
+box.classList.add('hide');
+setTimeout(function () { box.style.display = 'none';
+}, 380);
+};
 })();
 </script>
 <div id="ttl"><div class="wrap"><div class="shade"></div>
@@ -201,9 +222,10 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
 <div id="stg"><div class="wrap">
   <button class="gear" id="stg-settings" aria-label="設定"><svg viewBox="0 0 24 24"><path d="M9.7 2h4.6l.6 2.2 1.7.7 2-1.1 3.2 3.2-1.1 2 .7 1.7L24 9.3v4.6l-2.2.6-.7 1.7 1.1 2-3.2 3.2-2-1.1-1.7.7-.6 2.2H9.7l-.6-2.2-1.7-.7-2 1.1-3.2-3.2 1.1-2-.7-1.7L0 13.9V9.3l2.2-.6.7-1.7-1.1-2L5 1.8l2 1.1 1.7-.7L9.7 2Zm2.3 6a3.6 3.6 0 1 0 0 7.2A3.6 3.6 0 0 0 12 8Z"/></svg></button>
   <h1>第 1 章</h1><div class="sub">選擇要挑戰的關卡</div>
-  <div id="sbar" class="frame"><div class="im" id="s_im"></div><div class="mid"><div class="nm" id="s_nm"></div><div class="xp"><i id="s_xp"></i></div><div class="xt" id="s_xt"></div></div><div class="gold">金幣<b id="s_gold"></b></div></div>
+  <div id="sbar" class="frame"><div class="im" id="s_im"></div><div class="mid"><div class="nm" id="s_nm"></div><div class="xp"><i id="s_xp"></i></div><div class="xt" id="s_xt"></div></div><div class="gold">金幣<b id="s_gold"></b><span class="switch-hint">切換 ▾</span></div></div>
   <div id="nodes"></div>
   <div id="sbtn"><div id="sback">‹ 換角色</div><div id="sgo">開　戰</div></div>
+  <div id="hero-switch"><div class="panel frame"><h2>選擇出戰角色</h2><div id="hero-switch-list"></div><button id="hero-switch-close">關閉</button></div></div>
 </div></div>
 <div id="wmap"><div class="wrap">
   <button class="gear" id="map-settings" aria-label="設定"><svg viewBox="0 0 24 24"><path d="M9.7 2h4.6l.6 2.2 1.7.7 2-1.1 3.2 3.2-1.1 2 .7 1.7L24 9.3v4.6l-2.2.6-.7 1.7 1.1 2-3.2 3.2-2-1.1-1.7.7-.6 2.2H9.7l-.6-2.2-1.7-.7-3.2 1.1-3.2-3.2 1.1-2-.7-1.7L0 13.9V9.3l2.2-.6.7-1.7-1.1-2L5 1.8l2 1.1 1.7-.7L9.7 2Zm2.3 6a3.6 3.6 0 1 0 0 7.2A3.6 3.6 0 0 0 12 8Z"/></svg></button>
@@ -293,10 +315,26 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     $('cards').appendChild(c);
   });
   /* ---------- 選關畫面 ---------- */
-  var stg = $('stg'), wmap = $('wmap'), SV = null, selNode = 1;
-  function launch(nodeN, tut) {
+  var stg = $('stg'), wmap = $('wmap'), SV = null, selNode = 1, activeChapter = 1;
+  var heroSwitch = $('hero-switch'), heroSwitchList = $('hero-switch-list');
+  function closeHeroSwitch() { heroSwitch.style.display = 'none'; }
+  function openHeroSwitch(e) { if (e) e.stopPropagation(); renderHeroSwitch(); heroSwitch.style.display = 'flex'; }
+  function renderHeroSwitch() {
+    var state = TX.load(); heroSwitchList.innerHTML = '';
+    H.forEach(function (h, i) {
+      var hs = TX.hero(state, h.id), need = TX.xpNeed(hs.lv), cap = hs.lv >= TX.LV_CAP;
+      var row = document.createElement('div'); row.className = 'hero-option' + (i === cur ? ' current' : ''); row.setAttribute('data-i', i);
+      row.innerHTML = '<div class="slot"><div class="im"></div></div><div class="info"><div class="name">' + h.name + '<span class="lv">Lv ' + hs.lv + '</span></div><div class="xp"><i style="width:' + (cap ? 100 : Math.min(100, hs.xp / need * 100)) + '%"></i></div></div><div class="state">' + (i === cur ? '出戰中' : '') + '</div>';
+      sprFit(row.querySelector('.im'), h.id, 50, 4);
+      row.querySelector('.im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')';
+      row.onclick = function () { var top = $('nodes').scrollTop; cur = i; closeHeroSwitch(); showStages(activeChapter, true, top); };
+      heroSwitchList.appendChild(row);
+    });
+  }
+  function launch(nodeN, tut, chapterId) {
     clearInterval(timer); stg.style.display = 'none'; sel.style.display = 'none'; wmap.style.display = 'none';
     QS.delete('pick'); QS.delete('map'); QS.set('hero', H[cur].id); QS.set('node', String(nodeN)); QS.set('real', '1');
+    if (chapterId === 2) QS.set('ch', '2'); else QS.delete('ch');
     if (tut) QS.set('tut', String(tut)); else QS.delete('tut');
     history.replaceState(null, '', location.pathname + '?' + QS.toString());
     window.__showLoading && window.__showLoading();
@@ -304,15 +342,16 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     s1.onload = function () { var s2 = document.createElement('script'); s2.src = 'game.js?t=' + Date.now(); document.body.appendChild(s2); };
     document.body.appendChild(s1);
   }
-  function showStages(chapterId) {
+  function showStages(chapterId, keepSelection, keepScrollTop) {
+    chapterId = chapterId === 2 ? 2 : (chapterId === 0 ? 0 : 1); activeChapter = chapterId;
     var h = H[cur], hs = TX.hero(SV = TX.load(), h.id), ac = AC[h.attr] || '#ffd84a';
+    var data = TX.chData(chapterId), isPrologue = chapterId === 0;
     refreshLevels();
     try { localStorage.setItem('apLastHero', h.id); } catch (e) {}
     sel.style.display = 'none'; wmap.style.display = 'none'; stg.style.display = 'block'; stg.style.setProperty('--ac', ac);
     $('s_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')'; sprFit($('s_im'), h.id, 58);
-    var isPrologue = chapterId === 0;
-    $('stg').querySelector('h1').textContent = isPrologue ? '序章' : '第 1 章';
-    $('stg').querySelector('.sub').textContent = isPrologue ? '燼潮鎮・選擇教學節' : '選擇要挑戰的關卡';
+    $('stg').querySelector('h1').textContent = isPrologue ? '序章' : data.name;
+    $('stg').querySelector('.sub').textContent = isPrologue ? '燼潮鎮・選擇教學節' : (chapterId === 2 ? '赤脈熔原' : '選擇要挑戰的關卡');
     $('s_nm').textContent = h.name + '　Lv ' + hs.lv;
     var need = TX.xpNeed(hs.lv), cap = hs.lv >= TX.LV_CAP;
     $('s_xp').style.width = (cap ? 100 : Math.min(100, hs.xp / need * 100)) + '%';
@@ -320,18 +359,19 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     $('s_gold').textContent = SV.gold;
     // 預設選「最前面尚未通關的已開放節」，全通關則選最後一節
     var maxNode = isPrologue ? 3 : 10;
-    selNode = maxNode; for (var n = 1; n <= maxNode; n++) if ((isPrologue ? TX.prologueUnlocked(SV, n) : TX.unlocked(SV, n)) && !(isPrologue ? SV.prologueCleared.indexOf(n) >= 0 : TX.isCleared(SV, n))) { selNode = n; break; }
+    if (!keepSelection) { selNode = maxNode; for (var n = 1; n <= maxNode; n++) if ((isPrologue ? TX.prologueUnlocked(SV, n) : TX.unlocked(SV, n, chapterId)) && !(isPrologue ? SV.prologueCleared.indexOf(n) >= 0 : TX.isCleared(SV, n, chapterId))) { selNode = n; break; } }
     var box = $('nodes'); box.innerHTML = '';
     for (var k = 1; k <= maxNode; k++) (function (k) {
-      var un = isPrologue ? TX.prologueUnlocked(SV, k) : TX.unlocked(SV, k), cl = isPrologue ? SV.prologueCleared.indexOf(k) >= 0 : TX.isCleared(SV, k), d = document.createElement('div');
+      var un = isPrologue ? TX.prologueUnlocked(SV, k) : TX.unlocked(SV, k, chapterId), cl = isPrologue ? SV.prologueCleared.indexOf(k) >= 0 : TX.isCleared(SV, k, chapterId), d = document.createElement('div');
       d.className = 'nd frame ' + (cl ? 'clear' : un ? 'open' : 'lock'); d.setAttribute('data-n', k);
-      var rec = isPrologue ? 1 : TX.REC_LV[k], name = isPrologue && window.TUT_TEXT ? TUT_TEXT.nodes[k].name : TX.NODE_NAMES[k], enemies = isPrologue ? '教學' : TX.NODE_ENEMIES[k], hint = hs.lv >= rec ? '' : '（等級偏低）';
+      var rec = isPrologue ? 1 : data.rec[k], name = isPrologue && window.TUT_TEXT ? TUT_TEXT.nodes[k].name : data.names[k], enemies = isPrologue ? '教學' : data.enemies[k], hint = hs.lv >= rec ? '' : '（等級偏低）';
       d.innerHTML = '<div class="no">' + k + '</div><div class="mid"><div class="n">' + name + (k === 10 ? '　首領' : '') + '</div><div class="d">推薦 Lv ' + rec + '　敵人 ' + enemies + (un && !cl ? hint : '') + '</div></div><div class="st"><b>' + (cl ? '已通關' : un ? '可挑戰' : '未開放') + '</b></div>';
       d.onclick = function () { if (!un) return; selNode = k; mark(); };
       box.appendChild(d);
     })(k);
     mark();
-    var sel0 = box.querySelector('.nd.sel'); if (sel0) sel0.scrollIntoView({ block: 'center' });
+    if (keepSelection && keepScrollTop != null) box.scrollTop = keepScrollTop;
+    else { var sel0 = box.querySelector('.nd.sel'); if (sel0) sel0.scrollIntoView({ block: 'center' }); }
   }
   function showMap() {
     var h = H[cur], hs = TX.hero(SV = TX.load(), h.id), map = $('mapart');
@@ -342,7 +382,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     $('m_xt').textContent = hs.lv >= TX.LV_CAP ? '已達等級上限' : '冒險準備完畢'; $('m_gold').textContent = SV.gold;
     map.innerHTML = '';
     TX.CHAPTERS.forEach(function (ch) {
-      var open = TX.chapterOpen(SV, ch.id), cleared = ch.id === 0 ? SV.prologueCleared.length >= 3 : ch.id === 1 && TX.isCleared(SV, 10), d = document.createElement('button');
+      var open = TX.chapterOpen(SV, ch.id), cleared = ch.id === 0 ? SV.prologueCleared.length >= 3 : (ch.id === 1 || ch.id === 2) && TX.isCleared(SV, 10, ch.id), d = document.createElement('button');
       d.className = 'mapnode' + (ch.x > 560 ? '' : ' left') + (open ? ' open' : ' lock');
       d.style.left = (ch.x / 1024 * 100) + '%'; d.style.top = (ch.y / 1536 * 100) + '%'; d.style.setProperty('--ac', AC[ch.attr] || '#ffd84a');
       var lock = '<svg class="lockicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h2v11H5V10h2Zm2 0h6V7a3 3 0 0 0-6 0v3Z"/></svg>';
@@ -360,7 +400,10 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
   }
   function mark() { Array.prototype.forEach.call($('nodes').children, function (e) { e.classList.toggle('sel', +e.getAttribute('data-n') === selNode); }); }
   $('go').onclick = function () { var s = TX.load(); if (!s.tutorialDone) launch(1, 1); else showMap(); };
-  $('sgo').onclick = function () { launch(selNode, $('stg').querySelector('h1').textContent === '序章' ? selNode : 0); };
+  $('sgo').onclick = function () { launch(selNode, activeChapter === 0 ? selNode : 0, activeChapter); };
+  $('sbar').onclick = openHeroSwitch;
+  $('hero-switch').onclick = function (e) { if (e.target === heroSwitch) closeHeroSwitch(); };
+  $('hero-switch-close').onclick = closeHeroSwitch;
   $('sback').textContent = '‹ 世界地圖';
   $('sback').onclick = function () { showMap(); };
   $('mapback').onclick = function () { wmap.style.display = 'none'; stg.style.display = 'none'; sel.style.display = 'block'; render(); };
@@ -382,7 +425,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
   $('cancel-clear').onclick = function () { confirmBox.style.display = 'none'; };
   $('confirm-clear').onclick = function () {
     TX.clearSave(); confirmBox.style.display = 'none';
-    if (stg.style.display === 'block') showStages(); else refreshLevels();
+    if (stg.style.display === 'block') showStages(activeChapter); else refreshLevels();
     toast.style.display = 'block'; setTimeout(function () { toast.style.display = 'none'; }, 1400);
   };
   $('ttl-settings').onclick = openSettings; $('stg-settings').onclick = openSettings; $('map-settings').onclick = openSettings;
@@ -399,7 +442,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     ttl.onclick = function () { ttl.style.display = 'none'; sel.style.display = 'block'; render(); };
   }
   if (!PICK && !QS.get('map')) showTitle(); else { sel.style.display = 'block'; render(); }
-  if (PICK) { for (var q = 0; q < H.length; q++) if (H[q].id === PICK) cur = q; showStages(1); }
+  if (PICK) { for (var q = 0; q < H.length; q++) if (H[q].id === PICK) cur = q; showStages(QS.get('ch') === '2' ? 2 : 1); }
   if (QS.get('map')) { for (var q2 = 0; q2 < H.length; q2++) if (H[q2].id === QS.get('map')) cur = q2; showMap(); }
 })();
 </script>

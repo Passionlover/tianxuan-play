@@ -17,7 +17,7 @@
     NODE_NAMES: ['', '潮汐渡口', '貝殼灘', '鏡面淺灣', '水晶林徑', '深潮迴廊', '古燈塔遺跡', '瀑布階台', '水晶洞口', '鏡之大廳', '聖窟深處'],
     NODE_ENEMIES: [0, 19, 19, 21, 27, 32, 35, 45, 55, 63, '首領'],
     REC_LV: [0, 1, 1, 2, 3, 5, 6, 8, 10, 12, 14],                      // 每節推薦等級＝首次一路打過來到達該節時的等級（敵人係數依此換算，讓推薦等級的玩家維持調好的難度）
-    XP_OF: { tide: 12, mage: 18, fin: 16, rare: 150, boss: 400, green: 12, red: 16, blue: 18 },   // 每隻敵人經驗（第 1 章首次全通關約 Lv15）
+    XP_OF: { tide: 12, mage: 18, fin: 16, rare: 150, boss: 400, green: 12, red: 16, blue: 18, lavaslime: 16, obsidian: 28, whitepriest: 22, lavarare: 250, magmaking: 700 },   // 每隻敵人經驗（第 1 章首次全通關約 Lv15）
     GOLD_PER_ENEMY: 2, FIRST_CLEAR_GOLD: 100,                           // 金幣：每隻 2；首次通關每節額外 100×節數（目前只累積，不能花）
     LOSE_XP_RATE: 0.5,                                                  // 失敗保留 50% 經驗、不給金幣
     xpNeed: function (L) { return L < 30 ? 220 + 18 * L : 1400 + 50 * (L - 30); },   // 升到下一級所需經驗（沿用舊曲線，上限 50）
@@ -28,6 +28,7 @@
       if (!s || typeof s !== 'object') s = {};
       if (typeof s.gold !== 'number') s.gold = 0;
       if (!Array.isArray(s.cleared)) s.cleared = [];
+      if (!Array.isArray(s.cleared2)) s.cleared2 = [];
       if (typeof s.tutorialDone !== 'boolean') s.tutorialDone = false;
       if (!Array.isArray(s.prologueCleared)) s.prologueCleared = [];
       if (!s.heroes || typeof s.heroes !== 'object') s.heroes = {};
@@ -48,14 +49,18 @@
       if (!(h.lv >= 1)) h.lv = 1; if (h.lv > LV_CAP) h.lv = LV_CAP; if (!(h.xp >= 0)) h.xp = 0;
       return h;
     },
-    unlocked: function (s, n) { return n === 1 || s.cleared.indexOf(n - 1) >= 0; },
+    unlocked: function (s, n, ch) {
+      if (ch === 2) return n === 1 ? s.cleared.indexOf(10) >= 0 : s.cleared2.indexOf(n - 1) >= 0;
+      return n === 1 || s.cleared.indexOf(n - 1) >= 0;
+    },
     prologueUnlocked: function (s, n) { return n === 1 || s.prologueCleared.indexOf(n - 1) >= 0; },
     chapterOpen: function (s, id) {
       if (id === 0) return !!s.tutorialDone;
       if (id === 1) return true;
+      if (id === 2) return !!s.tutorialDone && TX.isCleared(s, 10, 1);
       return !!(TX.CHAPTERS[id] && TX.CHAPTERS[id].open);
     },
-    isCleared: function (s, n) { return s.cleared.indexOf(n) >= 0; },
+    isCleared: function (s, n, ch) { return (ch === 2 ? s.cleared2 : s.cleared).indexOf(n) >= 0; },
     // 加經驗並處理升級；回傳 { from, to, gained }
     addXp: function (h, xp) {
       var from = h.lv; h.xp += xp;
@@ -64,4 +69,9 @@
       return { from: from, to: h.lv, gained: xp };
     }
   };
+  TX.CHAPTER_DATA = {
+    1: { name: '第 1 章', names: TX.NODE_NAMES, enemies: TX.NODE_ENEMIES, rec: TX.REC_LV, key: 'cleared' },
+    2: { name: '第 2 章', names: ['', '熔原入口', '黑砂坡', '灰燼村', '熔岩裂谷', '黑玻璃河畔', '白火祭壇', '赤脈礦道', '熔王階梯', '熔心廊道', '赤脈火口'], enemies: [0, 19, 17, 19, 24, 25, 27, 33, 33, 36, '首領'], rec: [0, 15, 15, 16, 16, 17, 18, 19, 20, 22, 23], key: 'cleared2' }
+  };
+  TX.chData = function (ch) { return TX.CHAPTER_DATA[ch === 2 ? 2 : 1]; };
 })();

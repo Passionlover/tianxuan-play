@@ -2,18 +2,21 @@
    操作：拖曳移動；放手停下就自動攻擊；必殺鈕；換人鈕；集滿結晶三選一冒險技能。 */
 (function () {
   const W = 390, H = 844, A = '../game/assets/';
-  const CHAPTER_BG = 'bg_water.webp';   // 第 1 章（水）戰鬥場景圖；之後各章換成對應的 bg_*.webp
+  const QS = new URLSearchParams(location.search);
+  const CH_N = QS.get('ch') === '2' ? 2 : 1;
+  const IS_CH2 = CH_N === 2;
+  const CHAPTER_BG = IS_CH2 ? 'bg_fire.webp' : 'bg_water.webp';
   const WORLD_W = 960, WORLD_H = 1800;
   const ARENA = { x0: 24, x1: WORLD_W - 24, y0: 90, y1: WORLD_H - 40 };
   /* 地圖物件（A3 正式美術）。x,y＝圖的底部中心（腳印所在）；s＝顯示縮放。
      type：building／mountain 擋路也擋遠程箭；lake 只擋走路；forest 可穿過但減速（腳印範圍內）
      fp：腳印（實際碰撞）＝ [kind, 寬占圖寬比例, 高占圖高比例]；kind rect＝方形、ell＝橢圓 */
-  const ART = {
+  const ART_CH1 = {
     bld_cabin: [386, 363], bld_house2: [481, 453], bld_warehouse: [508, 453], bld_stone: [415, 458], bld_ruin: [422, 450], bld_lighthouse: [223, 454],
     rock_mountain_l: [480, 453], rock_mountain_m: [472, 290], rock_cliff: [480, 300], rock_cluster: [438, 353], rock_boulder: [384, 353], rock_lava: [405, 332],
     tree_pine: [464, 465], tree_dead: [452, 466], tree_mixed: [463, 464], lake_small: [471, 317], lake_big: [500, 391], lake_harbor: [486, 427]
   };
-  const OBJ_DEF = {   // 圖名 → [type, 縮放, 腳印kind, 寬比例, 高比例]
+  const OBJ_DEF_CH1 = {   // 圖名 → [type, 縮放, 腳印kind, 寬比例, 高比例]
     /* jun 11-17：角色／敵人不可跑到障礙物後面被遮住 → 高大物件的不可通行範圍涵蓋整個圖的輪廓（高比例≈整張圖高） */
     bld_cabin: ['building', 0.45, 'rect', 0.92, 0.96], bld_house2: ['building', 0.42, 'rect', 0.92, 0.96], bld_warehouse: ['building', 0.42, 'rect', 0.94, 0.96],
     bld_stone: ['building', 0.40, 'rect', 0.92, 0.96], bld_ruin: ['building', 0.42, 'rect', 0.92, 0.96], bld_lighthouse: ['building', 0.42, 'rect', 0.74, 0.96],
@@ -22,11 +25,17 @@
     tree_pine: ['forest', 0.42, 'ell', 0.84, 0.36], tree_dead: ['forest', 0.40, 'ell', 0.84, 0.36], tree_mixed: ['forest', 0.42, 'ell', 0.84, 0.36],
     lake_small: ['lake', 0.55, 'ell', 0.84, 0.62], lake_big: ['lake', 0.62, 'ell', 0.84, 0.64], lake_harbor: ['lake', 0.50, 'ell', 0.78, 0.62]
   };
-  const PLACE = [   // [圖名, x, y]
+  const PLACE_CH1 = [   // [圖名, x, y]
     ['bld_cabin', 150, 1700], ['bld_lighthouse', 840, 1730],  ['rock_cluster', 700, 1560], ['tree_pine', 160, 1500],
     ['lake_small', 750, 1400],  ['rock_mountain_l', 210, 1210], 
     ['lake_harbor', 790, 1010],  ['rock_cliff', 215, 960],  ['bld_ruin', 340, 760],  ['lake_big', 225, 560], ['tree_mixed', 700, 480],  ['rock_mountain_l', 780, 330],  ['rock_cliff', 500, 190], ['bld_cabin', 150, 170], 
   ];
+  const CH2_MAP = { bld_cabin: 'ch2_bld_house', bld_lighthouse: 'ch2_altar', rock_cluster: 'ch2_rock_spires', tree_pine: 'ch2_rock_boulder', lake_small: 'ch2_lava_pool', rock_mountain_l: 'ch2_rock_obsidian', lake_harbor: 'ch2_river_bend', rock_cliff: 'ch2_rock_cliff', bld_ruin: 'ch2_bld_ruin', lake_big: 'ch2_river_straight', tree_mixed: 'ch2_rock_lavahill' };
+  const ART_CH2 = { ch2_bld_house: [469, 464], ch2_altar: [449, 448], ch2_rock_spires: [429, 438], ch2_rock_boulder: [382, 292], ch2_lava_pool: [470, 213], ch2_rock_obsidian: [483, 475], ch2_river_bend: [426, 374], ch2_rock_cliff: [491, 203], ch2_bld_ruin: [463, 427], ch2_river_straight: [475, 287], ch2_rock_lavahill: [467, 295] };
+  const OBJ_DEF_CH2 = { ch2_bld_house: ['building', 0.42, 'rect', 0.92, 0.96], ch2_altar: ['building', 0.42, 'rect', 0.74, 0.96], ch2_rock_spires: ['mountain', 0.42, 'ell', 1.12, 1.0], ch2_rock_boulder: ['mountain', 0.32, 'ell', 1.0, 0.98], ch2_lava_pool: ['lake', 0.55, 'ell', 0.84, 0.62], ch2_rock_obsidian: ['mountain', 0.62, 'ell', 1.24, 1.0], ch2_river_bend: ['lake', 0.50, 'ell', 0.78, 0.62], ch2_rock_cliff: ['mountain', 0.55, 'rect', 0.96, 0.94], ch2_bld_ruin: ['building', 0.42, 'rect', 0.92, 0.96], ch2_river_straight: ['lake', 0.62, 'ell', 0.84, 0.64], ch2_rock_lavahill: ['mountain', 0.55, 'ell', 1.12, 0.92] };
+  const ART = IS_CH2 ? ART_CH2 : ART_CH1;
+  const OBJ_DEF = IS_CH2 ? OBJ_DEF_CH2 : OBJ_DEF_CH1;
+  const PLACE = PLACE_CH1.map(([img, x, y]) => [IS_CH2 ? CH2_MAP[img] : img, x, y]);
   const OBST = PLACE.map(([img, x, y]) => {
     const [t, sc0, kind, fw, fh] = OBJ_DEF[img], [iw, ih] = ART[img], dw = iw * sc0, dh = ih * sc0;
     const hw = dw * fw / 2, hh = dh * fh / 2;
@@ -108,7 +117,6 @@
     }
     return best || p;
   }
-  const QS = new URLSearchParams(location.search);
   const TX = window.TX;
   const TUT = Math.max(0, Math.min(3, parseInt(QS.get('tut') || '0', 10) || 0));
   const TUT_DATA = TUT && window.TUT_TEXT ? TUT_TEXT.nodes[TUT] : null;
@@ -117,7 +125,7 @@
   const ZOOM = (() => { const z = parseFloat(QS.get('zoom')); return z > 0.3 && z <= 1.2 ? z : 0.65; })(), VIS = ZOOM < 1 ? 1.25 : 1;
   const RS = (() => { const r = parseFloat(QS.get('rs')); return r >= 1 && r <= 3 ? r : (SET.hd ? 2 : 1); })();   // 渲染解析度倍率：網址指定時優先，否則使用設定
   const TIME_SCALE = Number(QS.get('speed')) || 1;
-  const VERSION = '原型 v56（載入進度條）';
+  const VERSION = '原型 v59（第2章首領）';
   const SIM = Number(QS.get('sim')) || 0;   // ?sim=N：加速模擬 N 局，統計勝率
   const GOLD = 0xe8b84a;
   function camShake(dur, amp) { if (SET.shake && sc && sc.cameras && sc.cameras.main) sc.cameras.main.shake(dur, amp); }
@@ -138,6 +146,8 @@
   /* 上場名單：第一版只有雷歐（無換人）。要測換人：網址加 ?team=leo,mia,gale */
   const ROSTER = (QS.get('team') || QS.get('hero') || 'zane').split(',').filter(id => CH[id]);   // 單一角色制：預設只有澤恩，進戰鬥後不能換人（?team= 僅供舊角色測試）
   ROSTER.forEach(id => { const hk = parseFloat(QS.get('hpk')), dk = parseFloat(QS.get('dk')); if (hk > 0) CH[id].maxHp = Math.round(CH[id].maxHp * hk); if (dk > 0) CH[id].dmg = CH[id].dmg * dk; });   // 平衡測試用：?hpk=血量倍率 ?dk=普攻傷害倍率（技能傷害跟著 D 變）
+  /* 第2章難度參數（預設＝正式值；?c2=obRes:1,obCd:7 可臨時覆蓋做模擬）。11-22 jun 定案調整：黑曜甲獸 血90→65、受傷×0.6→取消、衝撞冷卻5→7秒；首領第二階段熔痕每秒3→1（11-22 澤恩全章拉平再降）、召喚上限3→2；黑曜甲獸接觸傷害6→4（原值見 design_data）；首領吐息22→17.6、熔岩柱20→16（×0.8，11-22 jun 定案，為了澤恩首領） */
+  const C2 = Object.assign({ obHp: 65, obRes: 1, obCd: 7, obDmg: 18, obContact: 4, obWarn: 0.9, healPct: 0.25, healCd: 4, slimeDps: 3, bossLavaDps: 1, summonMax: 2, breathDmg: 17.6, pillarDmg: 16, pillarStand: 4.65 }, Object.fromEntries((QS.get('c2') || '').split(',').filter(Boolean).map(kv => { const [k, v] = kv.split(':'); return [k, parseFloat(v)]; }).filter(([k, v]) => !isNaN(v))));
   const TUNE = Object.assign({ ozPas: 0.85, ozSh: 10, ozCt: 0.2, ozCtCd: 10, ozAn: 0.3, ozAnCd: 14, sPoolSlow: 0.4, sPoolT: 5, sVorT: 3, sWaveStun: 0.5, sPas: 0.5 }, Object.fromEntries((QS.get('tune') || '').split(',').filter(Boolean).map(kv => { const [k, v] = kv.split(':'); return [k, parseFloat(v)]; })));   // 平衡用機制參數（預設＝正式值；?tune=ozPas:0.9,ozSh:15 可臨時覆蓋做模擬）
   const FR = { idle: 4, atk: 6, hit: 2, win: 4 };
   const MOVE_FR = { walk: 6, run: 6 };   // 目前只有雷歐有移動動作組
@@ -157,8 +167,10 @@
   const REAL = !!QS.get('real') && !SIM;   // real=1 是從選關畫面正式開戰（才會讀寫存檔）；測試網址預設不動存檔
   const SAVE = REAL ? TX.load() : null;
   const HERO_ID = ROSTER[0];
-  const HERO_LV = REAL ? TX.hero(SAVE, HERO_ID).lv : Math.max(1, Math.min(TX.LV_CAP, parseInt(QS.get('lv'), 10) || TX.REC_LV[NODE_N]));   // 測試網址預設用該節推薦等級（?lv=1 可指定）
-  const PL_MUL = TX.lvMul(HERO_LV), REC_MUL = TX.lvMul(TX.REC_LV[NODE_N]);
+  const CH_DATA = TX.chData ? TX.chData(CH_N) : (IS_CH2 ? { names: ['', '熔原入口', '黑砂坡', '灰燼村', '熔岩裂谷', '黑玻璃河畔', '白火祭壇', '赤脈礦道', '熔王階梯', '熔心廊道', '赤脈火口'], rec: [0, 15, 15, 16, 16, 17, 18, 19, 20, 22, 23], key: 'cleared2' } : { names: TX.NODE_NAMES, rec: TX.REC_LV, key: 'cleared' });
+  const REC_LV = CH_DATA.rec || TX.REC_LV;
+  const HERO_LV = REAL ? TX.hero(SAVE, HERO_ID).lv : Math.max(1, Math.min(TX.LV_CAP, parseInt(QS.get('lv'), 10) || REC_LV[NODE_N]));   // 測試網址預設用該節推薦等級（?lv=1 可指定）
+  const PL_MUL = TX.lvMul(HERO_LV), REC_MUL = TX.lvMul(REC_LV[NODE_N]);
   ROSTER.forEach(id => { CH[id].maxHp = Math.round(CH[id].maxHp * PL_MUL); CH[id].dmg = CH[id].dmg * PL_MUL; });
   const EN = {
     green: { hp: 28, spd: 44, dmg: 6, r: 18, scale: 0.8, tex: 'slime_green', art: 'ashslime', crystal: 1 },
@@ -173,12 +185,23 @@
     rare: { name: '鏡藍巨大史萊姆', hp: 190, spd: 28, dmg: 10, r: 46, scale: 0.55, tex: 'slime_giant_blue', crystal: 6, kind: 'rare', attr: '水', contactCd: 1.0, flee: 25 },
     boss: { name: '逆潮鏡獸', hp: BT.hp, spd: 30, dmg: 12, r: 52, scale: 0.55, tex: 'slime_giant_purple', art: 'mirrorbeast', crystal: 10, kind: 'mirror', attr: '水', noContact: true }
   });
+  if (IS_CH2) Object.assign(EN, {
+    lavaslime: { name: '熔岩史萊姆', hp: 42, spd: 40, dmg: 6, r: 19, scale: 0.8, tex: 'slime_red', art: 'lavaslime', crystal: 1, attr: '火', kind: 'ch2slime' },
+    obsidian: { name: '黑曜甲獸', hp: C2.obHp, spd: 26, dmg: C2.obContact, r: 28, scale: 0.8, art: 'obsidianbeast', crystal: 2, attr: '土', resist: C2.obRes, kind: 'ch2obsidian' },
+    whitepriest: { name: '白焰祭司', hp: 40, spd: 34, dmg: 0, r: 22, scale: 0.8, art: 'whitepriest', crystal: 2, attr: '光', kind: 'ch2priest', noContact: true, keep: [200, 260] },
+    lavarare: { name: '熔岩巨大史萊姆', hp: 220, spd: 28, dmg: 10, r: 46, scale: 0.55, tex: 'slime_giant_lava', crystal: 6, kind: 'rare', attr: '火', contactCd: 1.0, flee: 25 },
+    magmaking: { name: '無影熔王', hp: 1200, spd: 28, dmg: 12, r: 54, scale: 1.0, art: 'magmaking', crystal: 10, kind: 'ch2boss', attr: '火' }
+  });
   /* 敵人新美術（A5／A6）：側視／正面／背面 × 移動／攻擊；n＝每組幀數，oy＝腳底錨點，sc＝顯示縮放，mv／at＝移動／攻擊動畫幀率 */
   const ENEMY_ART = {
     ashslime: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 12 }, lavaslime: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 12 },
     tideslime: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, gatekeeper: { n: 3, oy: 170 / 176, sc: 1.0, mv: 4, at: 6 },
-    mirrormage: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, finbeast: { n: 6, oy: 92 / 96, sc: 1.05, mv: 12, at: 14 }, mirrorbeast: { n: 3, oy: 170 / 176, sc: 1.0, mv: 4, at: 6 }   // 第1章新美術（A9／A10）
+    mirrormage: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, finbeast: { n: 6, oy: 92 / 96, sc: 1.05, mv: 12, at: 14 }, mirrorbeast: { n: 3, oy: 170 / 176, sc: 1.0, mv: 4, at: 6 },
+    obsidianbeast: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, whitepriest: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, magmaking: { n: 3, oy: 174 / 180, sc: 1.0, mv: 4, at: 6 }
   };
+  /* 只載入本章用得到的敵人動作圖（11-22 驗收：原本兩章的圖都會載入，拖慢載入） */
+  const CH2_ONLY_ART = ['obsidianbeast', 'whitepriest', 'magmaking'];
+  const ART_KEYS = Object.keys(ENEMY_ART).filter(t => IS_CH2 ? (t === 'lavaslime' || CH2_ONLY_ART.includes(t)) : !CH2_ONLY_ART.includes(t));
   const WAVES_OLD = [
     [['green', 5]],
     [['green', 4], ['red', 3]],
@@ -189,8 +212,8 @@
   /* 冒險技能（design_data.json adventure_skills，jun 11-17 定案）。cat＝類別（A基礎強化／B改變打法／C自動施放／E生存／F結晶與爆發）；lv＝每一級的說明（第3級含★質變）。
      第一批實作 A、B、C、F；E 類（吸血、守護盾）暫用舊數值，第二批再改；D 類（狀態）第三批。傷害一律以普攻傷害 D 的倍率表示。 */
   /* ---------- 第 1 章（鏡潮聖窟）：節與波次（design_data.json enemy_action／stage_action，jun 11-18 定案） ---------- */
-  const NODE_NAMES = ['', '潮汐渡口', '貝殼灘', '鏡面淺灣', '水晶林徑', '深潮迴廊', '古燈塔遺跡', '瀑布階台', '水晶洞口', '鏡之大廳', '聖窟深處'];
-  const NODE_DEFS = [null,
+  const NODE_NAMES_CH1 = ['', '潮汐渡口', '貝殼灘', '鏡面淺灣', '水晶林徑', '深潮迴廊', '古燈塔遺跡', '瀑布階台', '水晶洞口', '鏡之大廳', '聖窟深處'];
+  const NODE_DEFS_CH1 = [null,
     [{ A: 5 }, { A: 6 }, { A: 8 }],
     [{ A: 5 }, { A: 4, C: 2 }, { A: 5, C: 3 }],
     [{ A: 6 }, { A: 4, C: 3 }, { A: 5, C: 3 }],
@@ -201,7 +224,17 @@
     [{ A: 5, B: 2, C: 4 }, { B: 3, C: 5 }, { A: 5, B: 4, C: 3 }, { B: 5, C: 4 }, { A: 6, B: 4, C: 5 }],
     [{ A: 5, B: 3, C: 4 }, { B: 4, C: 5 }, { A: 5, B: 4, C: 4 }, { A: 5, B: 5, C: 5 }, { B: 7, C: 7 }],
     [{ A: 6, C: 3 }, { X: 1 }]];
-  const LETTER = { A: 'tide', B: 'mage', C: 'fin', X: 'boss' };
+  const NODE_DEFS_CH2 = [null,
+    [{ A: 5 }, { A: 6 }, { A: 8 }], [{ A: 5 }, { A: 4, B: 1 }, { A: 5, B: 2 }], [{ A: 6 }, { A: 4, B: 2 }, { A: 5, B: 2 }],
+    [{ A: 5 }, { A: 4, C: 1 }, { A: 4, B: 1, C: 1 }, { A: 5, B: 2, C: 1 }], [{ A: 4, B: 2 }, { B: 2, C: 1 }, { A: 5, B: 2, C: 1 }, { A: 4, B: 3, C: 1 }],
+    [{ A: 6, B: 1 }, { B: 2, C: 1 }, { A: 6, B: 1, C: 2 }, { A: 4, B: 2, C: 2 }], [{ A: 6, B: 1 }, { B: 2, C: 1 }, { A: 5, B: 1, C: 2 }, { B: 3, C: 2 }, { A: 6, B: 2, C: 2 }],   // 第6、7節（11-22 澤恩全章拉平：黑曜甲獸每波再減1隻）
+    [{ A: 5, B: 1, C: 1 }, { B: 1, C: 2 }, { A: 5, B: 2, C: 2 }, { B: 2, C: 2 }, { A: 6, B: 2, C: 2 }],   // 第8節（黑曜甲獸 原2/3/3/4/4→11-22第一次調整 2/2/3/3/3→澤恩全章拉平 1/1/2/2/2）
+    [{ A: 5, B: 1, C: 1 }, { B: 2, C: 2 }, { A: 5, B: 2, C: 2 }, { A: 5, B: 2, C: 2 }, { B: 3, C: 4 }],   // 第9節（黑曜甲獸 原3/4/3/4/6→第一次調整 2/3/3/3/4→澤恩全章拉平 1/2/2/2/3）
+    [{ A: 6, B: 2 }, { M: 1 }]
+  ];
+  const NODE_NAMES = IS_CH2 ? CH_DATA.names : NODE_NAMES_CH1;
+  const NODE_DEFS = IS_CH2 ? NODE_DEFS_CH2 : NODE_DEFS_CH1;
+  const LETTER = IS_CH2 ? { A: 'lavaslime', B: 'obsidian', C: 'whitepriest', M: 'magmaking' } : { A: 'tide', B: 'mage', C: 'fin', X: 'boss' };
   const WAVES = LEGACY ? WAVES_OLD : NODE_DEFS[NODE_N].map(w => Object.entries(w).map(([k, n]) => [LETTER[k], n]));
   const NODE_HPK = LEGACY ? 1 : (1 + 0.04 * (NODE_N - 1)) * REC_MUL, NODE_DMGK = LEGACY ? 1 : (1 + 0.03 * (NODE_N - 1)) * REC_MUL;   // 每節難度係數
   /* 屬性相剋（沿用既有規則）：剋制 ×1.5、被剋 ×0.5；水→火→風→土→雷→水，光闇互剋 */
@@ -248,8 +281,8 @@
       pl: { x: 480, y: 1690, fx: -1, fy: 0, atkLock: 0, atkCd: 0, moving: false, hits: 0, shieldT: 0, shield: 0, waveT: 0, whirlT: 0, thunderT: 0, bladeA: 0, counterT: 0, dashT: 0, dash: null },
       st: { atk: 0, as: 0, rng: 0, spd: 0, crit: 0, chain: 0, life: 0, shield: 0, wave: 0, counter: 0, dash: 0, poison: 0, para: 0, slow: 0, slashwave: 0, twin: 0, whirl: 0, pierce: 0, thunder: 0, multithunder: 0, blades: 0, burst: 0, magnet: 0 },
       picks: [], dmgBy: {}, lastSrc: '', crystals: 0, level: 1, need: 5, gauge: 0,
-      enemies: [], pickups: [], shots: [], fx: [], tq: [], swaves: [], tg: [], waveT: 0, vuln: 0, cd: [0, 0, 0], lastMove: null,
-      rareWave: (!LEGACY && Math.random() < 0.06 && WAVES.length >= 3 && !WAVES[WAVES.length - 1].some(([t]) => t === 'boss')) ? 1 + Math.floor(Math.random() * (WAVES.length - 1)) : -1
+      enemies: [], pickups: [], shots: [], fx: [], tq: [], swaves: [], tg: [], lavaMarks: [], waveT: 0, vuln: 0, cd: [0, 0, 0], lastMove: null,
+      rareWave: (!LEGACY && Math.random() < 0.06 && WAVES.length >= 3 && !WAVES[WAVES.length - 1].some(([t]) => t === 'boss' || t === 'magmaking')) ? 1 + Math.floor(Math.random() * (WAVES.length - 1)) : -1
     };
     if (TUT) G.tut = { phase: 'intro', hint: '', target: { x: 680, y: 1690 }, intro: true, outro: false, retry: 0, stepKills: 0, spawned: [], dodgeAttempts: 0 };
   }
@@ -274,7 +307,7 @@
     this.load.image('bg', A + 'bg_prologue.webp');
     if (TUT) this.load.image('serloan_portrait', A + 'lihui_serloan.png');
     this.load.image('bg_chapter', A + CHAPTER_BG);   // 結算／暫停畫面背景：該章節的戰鬥場景圖（所有角色都載入）
-    ['stone', 'crack', 'ash', 'wet'].forEach(n => this.load.image('ground_' + n, A + `map/ground_${n}.png`));
+    (IS_CH2 ? ['rock', 'crack', 'ash', 'glass'] : ['stone', 'crack', 'ash', 'wet']).forEach(n => this.load.image('ground_' + n, A + `map/${IS_CH2 ? 'ch2_' : ''}ground_${n}.png`));
     ['melee', 'ultimate', 'world'].forEach(n => this.load.spritesheet('fx_' + n, A + `fx_${n}.png`, { frameWidth: 256, frameHeight: 256 }));
     this.load.spritesheet('fx_charge', A + 'fx_charge.png', { frameWidth: 256, frameHeight: 256 });   // A8 蓄力光環（列0金／列1冷，循環）
     Object.keys(ART).forEach(n => this.load.image('map_' + n, A + `map/${n}.png`));
@@ -304,8 +337,8 @@
         for (let i = 1; i <= FR[set]; i++) this.load.image(`${id}_${set}_${i}`, A + `hd_${CH[id].art || id}_1_${set === 'idle' ? 'idleA' : set}_f${i}.png`);
       });
     });
-    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].forEach(c => [1, 2].forEach(i => this.load.image(`slime_${c}_${i}`, A + `hd_slime_${c}_f${i}.png`)));
-    Object.keys(ENEMY_ART).forEach(t => ['side', 'front', 'back'].forEach(v => ['move', 'atk'].forEach(set => { for (let i = 1; i <= ENEMY_ART[t].n; i++) this.load.image(`en_${t}_${v}_${set}_${i}`, A + `hd_en_${t}_${v}_${set}_f${i}.png`); })));
+    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].concat(IS_CH2 ? ['giant_lava'] : []).forEach(c => [1, 2].forEach(i => this.load.image(`slime_${c}_${i}`, A + `hd_slime_${c}_f${i}.png`)));
+    ART_KEYS.forEach(t => ['side', 'front', 'back'].forEach(v => ['move', 'atk'].forEach(set => { for (let i = 1; i <= ENEMY_ART[t].n; i++) this.load.image(`en_${t}_${v}_${set}_${i}`, A + `hd_en_${t}_${v}_${set}_f${i}.png`); })));
   }
 
   function create() {
@@ -329,8 +362,8 @@
       if (HAS_MOVE[id]) { mk('walk', 6, 6, -1); mk('run', 6, 8, -1); }
       if (HAS_DIAG[id]) ['dn', 'up', 'fr', 'bk'].forEach(dir => Object.keys(DIAG_FR).forEach(set => { const [nm, rate, rep] = DIAG_ANIM[set]; sc.anims.create({ key: `${id}_${dir}_${nm}`, frames: Array.from({ length: DIAG_FR[set] }, (_, i) => ({ key: `${id}_${dir}_${set}_${i + 1}` })), frameRate: rate, repeat: rep }); }));
     });
-    Object.keys(ENEMY_ART).forEach(t => ['side', 'front', 'back'].forEach(v => { const cf = ENEMY_ART[t]; ['move', 'atk'].forEach(set => sc.anims.create({ key: `en_${t}_${v}_${set}`, frames: Array.from({ length: cf.n }, (_, i) => ({ key: `en_${t}_${v}_${set}_${i + 1}` })), frameRate: set === 'move' ? cf.mv : cf.at, repeat: set === 'move' ? -1 : 0 })); }));
-    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].forEach(c => sc.anims.create({ key: `slime_${c}`, frames: [{ key: `slime_${c}_1` }, { key: `slime_${c}_2` }], frameRate: 3, repeat: -1 }));
+    ART_KEYS.forEach(t => ['side', 'front', 'back'].forEach(v => { const cf = ENEMY_ART[t]; ['move', 'atk'].forEach(set => sc.anims.create({ key: `en_${t}_${v}_${set}`, frames: Array.from({ length: cf.n }, (_, i) => ({ key: `en_${t}_${v}_${set}_${i + 1}` })), frameRate: set === 'move' ? cf.mv : cf.at, repeat: set === 'move' ? -1 : 0 })); }));
+    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].concat(IS_CH2 ? ['giant_lava'] : []).forEach(c => sc.anims.create({ key: `slime_${c}`, frames: [{ key: `slime_${c}_1` }, { key: `slime_${c}_2` }], frameRate: 3, repeat: -1 }));
     buildGround(); buildFxTextures(); buildFxAnims();
     sc.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
     buildBlock(); drawObstacles(); buildMiniTex();
@@ -386,7 +419,7 @@
     let dmg = base * dmgMul(), crit = !!(o && o.fc) || (!(o && o.nocrit) && Math.random() < 0.05 + 0.12 * G.st.crit);
     if (crit) dmg *= 2;
     const em = elemMul(def().attr, e.def.attr); dmg *= em;   // 屬性相剋
-    if (e.filmT > 0) dmg *= 0.8; if (e.shieldT > 0) dmg *= 0.7;   // 水膜、鏡盾
+    if (e.filmT > 0) dmg *= 0.8; if (e.shieldT > 0) dmg *= 0.7; if (e.def.resist != null) dmg *= e.def.resist;   // 水膜、鏡盾、黑曜甲獸減傷
     if (e.paraT > 0 && G.st.para >= 3) dmg *= 1.3;   // 麻痺 Lv3 質變：麻痺期間敵人受到的傷害 +30%
     dmg = Math.round(dmg);
     e.hp -= dmg; e.hurtT = 0.4; e.flashT = 0.08;
@@ -442,15 +475,16 @@
   const inRingOf = (c, R, fn) => G.enemies.forEach(e => { if (!e.dead && dist(e, c) - e.def.r < R) fn(e); });
   function pushAway(e, from, px) { const a = Math.atan2(e.y - from.y, e.x - from.x); e.x = clamp(e.x + Math.cos(a) * px, ARENA.x0, ARENA.x1); e.y = clamp(e.y + Math.sin(a) * px, ARENA.y0, ARENA.y1); resolveSolid(e, e.def.r * 0.7); }
   function pullIn(e, to, px) { const d0 = dist(e, to); if (d0 <= e.def.r + 24) return; const a = Math.atan2(to.y - e.y, to.x - e.x), m = Math.min(px, d0 - e.def.r - 24); e.x += Math.cos(a) * m; e.y += Math.sin(a) * m; resolveSolid(e, e.def.r * 0.7); }
-  const stunE = (e, t) => { const d = (e.type === 'boss' || e.def.paraHalf) ? t * 0.5 : t; e.stun = Math.max(e.stun, d); e.paraT = Math.max(e.paraT || 0, d); };   // 麻痺：首領時間減半
-  const slowE = (e, f, t) => { const ff = e.type === 'boss' ? f * 0.5 : f; if (!(e.slowT > 0) || ff >= e.slowF) e.slowF = ff; e.slowT = Math.max(e.slowT || 0, t); };   // 緩速：首領效果減半
+  const isBoss = e => !!e && (e.type === 'boss' || e.type === 'magmaking' || e.def?.kind === 'ch2boss');
+  const stunE = (e, t) => { const d = (isBoss(e) || e.def.paraHalf) ? t * 0.5 : t; e.stun = Math.max(e.stun, d); e.paraT = Math.max(e.paraT || 0, d); };   // 麻痺：首領時間減半
+  const slowE = (e, f, t) => { const ff = isBoss(e) ? f * 0.5 : f; if (!(e.slowT > 0) || ff >= e.slowF) e.slowF = ff; e.slowT = Math.max(e.slowT || 0, t); };   // 緩速：首領效果減半
   /* D 類狀態（只由「普攻命中」觸發）：毒刃＝每秒傷害、不疊層只刷新；麻痺＝機率定身；緩速＝減速，Lv3 疊滿 3 次凍結 1 秒（之後 5 秒免疫、首領不會被凍結） */
   function onHitStatus(e) {
     if (G.st.poison) e.poison = { t: 5, k: [0, 0.25, 0.35, 0.45][G.st.poison], next: e.poison ? e.poison.next : 1 };
     if (G.st.para && Math.random() < [0, 0.08, 0.12, 0.16][G.st.para]) stunE(e, 2);
     if (G.st.slow) {
       slowE(e, [0, 0.25, 0.35, 0.45][G.st.slow], 3);
-      if (G.st.slow >= 3 && e.type !== 'boss' && !(e.freezeImm > 0)) {
+      if (G.st.slow >= 3 && !isBoss(e) && !(e.freezeImm > 0)) {
         e.slowN = (e.slowN || 0) + 1;
         if (e.slowN >= 3) { e.slowN = 0; e.stun = Math.max(e.stun, 1); e.freezeT = 1; e.freezeImm = 5; if (!SIM) ringFx(e.x, e.y - 20, 0xa8e8ff, 36); }
       }
@@ -559,8 +593,70 @@
     const c = act(); c.hp = Math.min(CH[c.id].maxHp, c.hp + n);
   }
 
+  /* ---------- 第2章特殊行為 ---------- */
+  const LAVA_MARK_MAX = 60;
+  function addLavaMark(e, o) {
+    if (!IS_CH2 || !G || !G.lavaMarks) return;
+    o = o || {};
+    const rare = e.type === 'lavarare', r = o.r == null ? (rare ? 40 : 26) : o.r, life = o.life == null ? (rare ? 4 : 3) : o.life;
+    G.lavaMarks.push({ seed: Math.random() * 10, x: o.x == null ? e.x : o.x, y: o.y == null ? e.y : o.y, r, life, maxLife: life, dps: o.dps == null ? (rare ? 5 : C2.slimeDps) : o.dps, dmgK: o.dmgK == null ? (e.dmgK || 1) : o.dmgK, dmgT: 0 });
+    while (G.lavaMarks.length > LAVA_MARK_MAX) G.lavaMarks.shift();
+  }
+  function updateLavaMarks(dt) {
+    if (!IS_CH2 || !G.lavaMarks) return;
+    const p = G.pl;
+    G.lavaMarks.forEach(m => {
+      m.life -= dt; m.dmgT += dt;
+      while (m.dmgT >= 1 && m.life > -1) { m.dmgT -= 1; if (lavaIn(m, p.x, p.y)) damagePlayer(m.dps * (m.dmgK || 1), { x: m.x, y: m.y, type: 'lava', lava: true }); }
+    });
+    G.lavaMarks = G.lavaMarks.filter(m => m.life > 0);
+  }
+  function lavaMarkHit(x, y) { return IS_CH2 && (G.lavaMarks || []).some(m => m.life > 0 && lavaIn(m, x, y)); }
+  const LAVA_FLAT = 0.6;   // 熔痕是地面斑塊：俯視角下垂直方向壓扁（外觀與判定一致）
+  const lavaIn = (m, x, y) => Math.hypot(x - m.x, (y - m.y) / LAVA_FLAT) <= m.r;
+  function lavaBlob(g, m, k, wob) {   // 不規則扁平斑塊
+    g.beginPath();
+    for (let i = 0; i <= 28; i++) { const a = i * Math.PI * 2 / 28, rr = m.r * k * (1 + wob * Math.sin(i * 0.9 + m.seed) + wob * 0.5 * Math.sin(i * 1.7 + m.seed * 2)); const x = m.x + Math.cos(a) * rr, y = m.y + Math.sin(a) * rr * LAVA_FLAT; if (!i) g.moveTo(x, y); else g.lineTo(x, y); }
+    g.closePath(); g.fillPath();
+  }
+  function drawLavaMarks(g) {   // 焦黑外圈 → 暗紅硬殼 → 流動熔岩 → 亮芯與熱點；越接近消失熔岩越冷卻變暗（11-22 驗收改：原本是正圓亮球）
+    if (!IS_CH2 || !G.lavaMarks) return;
+    G.lavaMarks.forEach(m => {
+      const fade = m.life < 0.5 ? Math.max(0, m.life / 0.5) : 1, heat = Math.min(1, m.life / m.maxLife + 0.25), pulse = 0.5 + 0.5 * Math.sin(G.t * 4 + m.seed * 3);
+      g.fillStyle(0x140503, 0.5 * fade); lavaBlob(g, m, 1.18, 0.10);
+      g.fillStyle(0x4a1006, 0.92 * fade); lavaBlob(g, m, 0.98, 0.12);
+      g.fillStyle(0xb02a0a, (0.55 + 0.35 * heat) * fade); lavaBlob(g, m, 0.74, 0.16);
+      g.fillStyle(0xff6a1c, (0.25 + 0.35 * heat + 0.12 * pulse) * fade); lavaBlob(g, m, 0.44, 0.2);
+      g.fillStyle(0xffd060, (0.15 + 0.4 * heat * pulse) * fade);
+      for (let k = 0; k < 3; k++) { const a = m.seed * 5 + k * 2.1; g.fillCircle(m.x + Math.cos(a) * m.r * 0.38, m.y + Math.sin(a) * m.r * 0.38 * LAVA_FLAT, m.r * 0.07); }
+    });
+  }
+  function pointSegmentDistance(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1, q = dx * dx + dy * dy ? clamp(((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy), 0, 1) : 0;
+    return Math.hypot(px - (x1 + dx * q), py - (y1 + dy * q));
+  }
+  function obsidianHit(e, x1, y1, x2, y2) {
+    if (e.ob && !e.ob.hit && pointSegmentDistance(G.pl.x, G.pl.y, x1, y1, x2, y2) <= 25) { e.ob.hit = true; damagePlayer(C2.obDmg * (e.dmgK || 1), { x: e.x, y: e.y, type: e.type }); }
+  }
+  function priestHeal(e) {
+    const target = G.enemies.filter(x => !x.dead && x.hp < x.maxHp && dist(e, x) <= 220).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+    if (!target) return false;
+    const amount = Math.min(target.maxHp - target.hp, target.maxHp * C2.healPct);
+    target.hp += amount; e.healCd = C2.healCd;
+    if (!SIM) { ringFx(e.x, e.y - 22, 0xffffff, 45); zLine(e.x, e.y - 18, target.x, target.y - 22, { tint: 0xffffff, depth: 907 }); ringFx(target.x, target.y - 18, 0xcaffd0, 38); burst(target.x, target.y - 28, 5, { tint: 0xdffff0, v0: 20, v1: 70, l0: 220, l1: 420 }); if (SET.dmgNum) floatText(target.x, target.y - 68, '+' + Math.round(amount), '#9fe08a', 16); }
+    return true;
+  }
+
   function damagePlayer(n, src) {
-    if (G.inv > 0 || G.state !== 'play') return;
+    if (G.state !== 'play') return;
+    if (src && src.lava) {   // 熔痕：地面持續傷害——不給無敵時間、不吃護盾、不擊退、不觸發反擊（11-22 驗收修正）
+      if (act().id === 'oz') n = Math.max(1, Math.round(n * TUNE.ozPas));
+      const c = act(); c.hp -= n; G.dmgBy.lava = (G.dmgBy.lava || 0) + n; G.lastSrc = 'lava';
+      if (SET.dmgNum && !SIM) floatText(G.pl.x, G.pl.y - 80, '-' + Math.round(n * 10) / 10, '#ff9a4a', 14);
+      if (c.hp <= 0) { c.hp = 0; c.alive = false; autoSwap(); }
+      return;
+    }
+    if (G.inv > 0) return;
     if (G.vuln > 0) n = Math.round(n * 1.2);   // 首領第二階段破防：受傷 +20%
     if (G.pl.shield > 0) { G.pl.shield--; floatText(G.pl.x, G.pl.y - 80, '擋下', '#7be4df', 16); G.inv = 0.4; if (G.st.shield >= 3) shieldBreak(); return; }
     if (act().id === 'oz') {   // 歐斯：岩肌 −15%；反震姿態 −80%（累積擋下的傷害）；大地之錨 −70%
@@ -568,7 +664,9 @@
       if (G.oz && G.oz.counter) { const nn = Math.max(1, Math.round(n * TUNE.ozCt)); G.oz.counter.acc += n - nn; n = nn; if (!SIM) playFx('oz_counter', 2, G.pl.x, G.pl.y - 30, { s: 0.6, depth: 910 }); }
       if (G.oz && G.oz.anchor) n = Math.max(1, Math.round(n * TUNE.ozAn));
     }
-    const c = act(); c.hp -= n; G.inv = (src && src.bite) ? 0.1 : 0.45;   // 多段攻擊（連咬／連爪）每下之間只給 0.1 秒無敵 { const k = (src && src.type) || '?'; G.dmgBy[k] = (G.dmgBy[k] || 0) + n; G.lastSrc = k; } G.gauge = Math.min(100, G.gauge + 5);
+    const c = act(); c.hp -= n; G.inv = (src && src.bite) ? 0.1 : 0.45;   // 多段攻擊（連咬／連爪）每下之間只給 0.1 秒無敵
+    { const k = (src && src.type) || '?'; G.dmgBy[k] = (G.dmgBy[k] || 0) + n; G.lastSrc = k; }   // 受傷統計（11-22 jun：恢復；自 v30 起被誤寫進註解）
+    // 受傷回必殺量表 +5：自 v30 起未生效，jun 11-22 裁定維持不生效（之後的難度都在此狀態下調整）。原文：G.gauge = Math.min(100, G.gauge + 5);
     if (SET.dmgNum) floatText(G.pl.x, G.pl.y - 80, '-' + n, '#ff6b5b', 16);
     G.pl.hurtT = 0.4;
     if (src && !(G.oz && G.oz.anchor)) { const a = Math.atan2(G.pl.y - src.y, G.pl.x - src.x); G.pl.x = clamp(G.pl.x + Math.cos(a) * 10, ARENA.x0, ARENA.x1); G.pl.y = clamp(G.pl.y + Math.sin(a) * 10, ARENA.y0, ARENA.y1); resolveSolid(G.pl, 12); }
@@ -634,7 +732,7 @@
       }
       burst(p.x, p.y - 30, 10, { tint: wat ? 0x9fe6ff : ert ? 0xd8b070 : 0xfff0a0, v0: 80, v1: 240, l0: 300, l1: 600 });
     }
-    if (act().id === 'sere') inR.forEach(e => { if (e.type !== 'boss') pullIn(e, p, Math.max(30, (dist(e, p) - 60) * 0.45)); else pullIn(e, p, 25); });   // 倒流：把敵人倒拖向瑟蕾聚成一團
+    if (act().id === 'sere') inR.forEach(e => { if (!isBoss(e)) pullIn(e, p, Math.max(30, (dist(e, p) - 60) * 0.45)); else pullIn(e, p, 25); });   // 倒流：把敵人倒拖向瑟蕾聚成一團
     inR.forEach(e => { hurtEnemy(e, per, p, true); e.stun = 0.5; });
   }
 
@@ -666,7 +764,8 @@
     const key = d.tex;
     const sp = d.art ? sc.add.sprite(x, y, `en_${d.art}_front_move_1`).setOrigin(0.5, ENEMY_ART[d.art].oy).setScale(ENEMY_ART[d.art].sc * (d.big || 1) * VIS) : sc.add.sprite(x, y, key + '_1').setOrigin(0.5, 1).setScale(d.scale * VIS);
     sp.play(d.art ? `en_${d.art}_front_move` : key);
-    G.enemies.push({ def: d, type, x, y, hp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), maxHp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), dmgK: NODE_DMGK * (TUT ? 0.5 : 1), life: opts.noFlee ? 0 : d.flee || 0, noFlee: !!opts.noFlee, invuln: !!opts.invuln, tutDodge: !!opts.tutDodge, tutBoss: !!opts.tutBoss, filmCd: rand(2, 8), bs: d.kind === 'mirror' ? { clawCd: 2, roarCd: 4, shieldCd: 8, summonCd: 10, castT: 0, p2: false } : null, sp, dead: false, atkCd: rand(0.2, 0.8), aoeCd: d.aoe ? rand(1, d.aoe.cd) : 99, tele: 0, tx: 0, ty: 0, flash: 0, stun: 0 });
+    const enemy = { def: d, type, x, y, hp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), maxHp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), dmgK: NODE_DMGK * (TUT ? 0.5 : 1), life: opts.noFlee ? 0 : d.flee || 0, noFlee: !!opts.noFlee, bossSummon: !!opts.bossSummon, invuln: !!opts.invuln, tutDodge: !!opts.tutDodge, tutBoss: !!opts.tutBoss, filmCd: rand(2, 8), bs: d.kind === 'mirror' ? { clawCd: 2, roarCd: 4, shieldCd: 8, summonCd: 10, castT: 0, p2: false } : d.kind === 'ch2boss' ? { breathCd: 4, pillarCd: 6, lavaCd: 8, summonCd: 10, castT: 0, readyT: 1.5, p2: false } : null, sp, dead: false, atkCd: rand(0.2, 0.8), aoeCd: d.aoe ? rand(1, d.aoe.cd) : 99, tele: 0, tx: 0, ty: 0, flash: 0, stun: 0, lavaCd: IS_CH2 && (type === 'lavaslime' || type === 'lavarare') ? rand(0.1, 1) : 99, obCd: type === 'obsidian' ? rand(1, 2) : 99, ob: null, healCd: type === 'whitepriest' ? 4 : 99 };
+    G.enemies.push(enemy); return enemy;
   }
 
   function tutSpot(i) {
@@ -791,7 +890,7 @@
       }
       (G.vortex || []).forEach(v => {
         const dd = Math.hypot(e.x - v.x, e.y - v.y); if (dd > v.r + e.def.r || dd < 6) return;
-        const spd = (v.on ? 190 : 95) * (e.type === 'boss' ? 0.4 : 1), a = Math.atan2(v.y - e.y, v.x - e.x), m = Math.min(spd * dt, dd);
+        const spd = (v.on ? 190 : 95) * (isBoss(e) ? 0.4 : 1), a = Math.atan2(v.y - e.y, v.x - e.x), m = Math.min(spd * dt, dd);
         e.x += Math.cos(a) * m; e.y += Math.sin(a) * m; resolveSolid(e, e.def.r * 0.7);
         e.vorT = (e.vorT || 1) - dt; if (e.vorT <= 0) { e.vorT += 1; skillHit(e, v.on ? 0.9 : 0.6, p, { nocrit: true, col: '#7fd8ff', nofx: true }); }
       });
@@ -826,7 +925,7 @@
     if (!SIM) {
       a.sp = sc.add.sprite(p.x, p.y, 'fx_oz_anchor', 0).setScale(1.15).setDepth(7).setAlpha(0.9); a.sp.play('fxa_oz_anchor_0'); a.sp.once('animationcomplete', () => { if (a.sp && a.sp.anims) a.sp.play('ozcrack_loop'); });
       a.sp2 = sc.add.sprite(p.x, p.y, 'fx_oz_anchor', 12).setScale(1.1).setDepth(9).setAlpha(0.75); a.sp2.play('ozslow_loop');
-      a.sp3 = sc.add.sprite(p.x, p.y - 30, 'fx_oz_anchor', 23).setScale(0.62).setDepth(p.y + 31).setAlpha(0.85);
+      /* 11-22 jun：拿掉身體岩石環（fx_oz_anchor 第23格），它與反擊姿態護殼幾乎相同，看起來像同時開反擊。大地之錨只留地面裂痕＋減速範圍 */
     }
     G.oz.anchor = a; return true;
   }
@@ -866,9 +965,58 @@
   const spdFor = (e) => e.def.spd * (inForest(e.x, e.y) ? 0.55 : 1) * (e.slowT > 0 ? 1 - e.slowF : 1);
   function chaseP(e, p, dt, sp) { const tg = steerTarget(e, p), tx = tg.x - e.x, ty = tg.y - e.y, td = Math.hypot(tx, ty) || 1; e.x += tx / td * sp * dt; e.y += ty / td * sp * dt; resolveSolid(e, e.def.r * 0.7); }
   function fleeEnemy(e) { e.dead = true; floatText(e.x, e.y - 60, '逃走了…', '#cfd6e6', 16); if (SIM) { e.sp.destroy(); return; } sc.tweens.add({ targets: e.sp, alpha: 0, duration: 300, onComplete: () => e.sp.destroy() }); }
+  /* 走特殊行為的敵人也要能接觸攻擊（11-22 驗收：P6 版本跳過了一般流程，熔岩史萊姆／黑曜甲獸／熔岩稀有怪都不會撞人） */
+  function contactAtk(e) { if (e.atkCd <= 0 && !e.def.noContact) { e.atkCd = e.def.contactCd || 0.9; playEnemyAtk(e); damagePlayer(e.def.dmg * (e.dmgK || 1), e); } }
+  function stepCh2Boss(e, dt, p, d, dx, dy) {
+    const b = e.bs, k = e.dmgK || 1;
+    b.breathCd = Math.max(0, b.breathCd - dt); b.pillarCd = Math.max(0, b.pillarCd - dt); b.lavaCd = Math.max(0, b.lavaCd - dt); b.summonCd = Math.max(0, b.summonCd - dt);
+    if (b.readyT > 0) { b.readyT = Math.max(0, b.readyT - dt); if (d > e.def.r + 14) chaseP(e, p, dt, spdFor(e)); return true; }
+    const p2 = e.hp <= e.maxHp * 0.5;
+    if (p2 && !b.p2) { b.p2 = true; b.lavaCd = 2; b.summonCd = 3; banner('無影熔王 狂熱！'); if (!SIM) camShake(160, 0.006); }
+    if (p2 && b.lavaCd <= 0) {
+      b.lavaCd = 8;
+      for (let i = 0; i < 3; i++) { const a = rand(0, Math.PI * 2), r = i === 0 ? 0 : rand(70, 150); addLavaMark(e, { x: clamp(p.x + Math.cos(a) * r, ARENA.x0 + 110, ARENA.x1 - 110), y: clamp(p.y + Math.sin(a) * r, ARENA.y0 + 110, ARENA.y1 - 110), r: 110, life: 6, dps: C2.bossLavaDps, dmgK: k }); }
+      if (!SIM) burst(p.x, p.y - 10, 18, { tint: 0xff6a1c, v0: 35, v1: 120, l0: 260, l1: 520 });
+    }
+    if (p2 && b.summonCd <= 0) {
+      const n = G.enemies.filter(x => !x.dead && x.bossSummon && x.type === 'obsidian').length;
+      if (n < C2.summonMax) { b.summonCd = 10; const a = rand(0, Math.PI * 2), q = spawnEnemy('obsidian', clamp(e.x + Math.cos(a) * 70, ARENA.x0 + 30, ARENA.x1 - 30), clamp(e.y + Math.sin(a) * 70, ARENA.y0 + 30, ARENA.y1 - 30), { noFlee: true, bossSummon: true }); if (!SIM) { burst(q.x, q.y - 20, 14, { tint: 0xff7a24, v0: 40, v1: 150, l0: 240, l1: 520 }); ringFx(q.x, q.y - 20, 0xffb040, 40); } } else b.summonCd = 1;
+    }
+    if (b.castT > 0) { b.castT = Math.max(0, b.castT - dt); return true; }
+    if (b.breathCd <= 0 && d < 420) { b.breathCd = 4; b.castT = 0.8; playEnemyAtk(e); addTg({ shape: 'fan', x: e.x, y: e.y, ang: Math.atan2(dy, dx), range: 200, arc: Math.PI * 75 / 180, dur: 0.8, dmg: C2.breathDmg * k, fire: true }); return true; }
+    if (b.pillarCd <= 0 && d < 440) { b.pillarCd = 6; b.castT = C2.pillarStand; playEnemyAtk(e); for (let i = 0; i < 4; i++) { const a = rand(0, Math.PI * 2), r = i ? rand(60, 120) : 0, x = clamp(p.x + Math.cos(a) * r, ARENA.x0 + 70, ARENA.x1 - 70), y = clamp(p.y + Math.sin(a) * r, ARENA.y0 + 70, ARENA.y1 - 70); addTg({ shape: 'circle', x, y, r: 70, dur: 0.9, delay: i * 1.25, dmg: C2.pillarDmg * k, pillar: true }); } return true; }
+    if (d > e.def.r + 40) chaseP(e, p, dt, spdFor(e)); else contactAtk(e);
+    return true;
+  }
   function stepEnemyCustom(e, dt, p) {
-    const k = e.def.kind; if (k === 'tide' || k === 'rare') return false;
+    const k = e.def.kind; if (k === 'tide' || (k === 'rare' && e.type !== 'lavarare')) return false;
     const dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy) || 1, sp = spdFor(e);
+    if (IS_CH2 && (e.type === 'lavaslime' || e.type === 'lavarare')) {
+      const moving = d > e.def.r + 14;
+      if (moving) { chaseP(e, p, dt, sp); e.lavaCd -= dt; if (e.lavaCd <= 0) { addLavaMark(e); e.lavaCd += 1; } } else contactAtk(e);
+      return true;
+    }
+    if (IS_CH2 && e.type === 'obsidian') {
+      e.obCd = Math.max(0, e.obCd - dt);
+      if (e.ob) {
+        if (e.ob.phase === 'warn') { e.ob.t -= dt; if (e.ob.t <= 0) { e.ob.phase = 'dash'; e.ob.t = 0; e.ob.x0 = e.x; e.ob.y0 = e.y; } return true; }
+        const ox = e.x, oy = e.y, step = 790 * dt, nx = e.ob.nx, ny = e.ob.ny;
+        let move = Math.min(step, e.ob.left), hitSolid = false;
+        for (let i = 1; i <= 8; i++) { const q = move * i / 8; if (solidAt(ox + nx * q, oy + ny * q, e.def.r * 0.7)) { move = move * (i - 1) / 8; hitSolid = true; break; } }
+        e.x += nx * move; e.y += ny * move; e.ob.left -= move; obsidianHit(e, ox, oy, e.x, e.y);
+        if (e.ob.left <= 0 || hitSolid) { if (!SIM) burst(e.x, e.y - 12, 7, { tint: 0xd8b070, v0: 40, v1: 130, l0: 220, l1: 480, grav: 180 }); e.ob = null; e.obCd = C2.obCd; }
+        return true;
+      }
+      if (e.obCd <= 0 && d <= 260) { e.ob = { phase: 'warn', t: C2.obWarn, nx: dx / d, ny: dy / d, left: 260, hit: false }; playEnemyAtk(e); return true; }
+      if (d > e.def.r + 14) chaseP(e, p, dt, sp); else contactAtk(e);
+      return true;
+    }
+    if (k === 'ch2priest') {   // 第 2 章框架：白焰祭司只保持距離，特殊補血留給後續交辦
+      const [lo, hi] = e.def.keep;
+      if (d < lo) { e.x -= dx / d * sp * dt; e.y -= dy / d * sp * dt; resolveSolid(e, e.def.r * 0.7); } else if (d > hi) chaseP(e, p, dt, sp);
+      e.healCd -= dt; if (e.healCd <= 0) priestHeal(e);
+      return true;
+    }
     if (k === 'mage') {   // 鏡潮術士：保持 190～260 距離，定時在玩家位置放預警圈
       const [lo, hi] = e.def.keep;
       if (d < lo) { e.x -= dx / d * sp * dt; e.y -= dy / d * sp * dt; resolveSolid(e, e.def.r * 0.7); } else if (d > hi) chaseP(e, p, dt, sp);
@@ -887,6 +1035,7 @@
       if (d > e.def.r + 14) chaseP(e, p, dt, sp);
       return true;
     }
+    if (k === 'ch2boss') { stepCh2Boss(e, dt, p, d, dx, dy); return true; }
     if (k === 'mirror') { stepBoss(e, dt, p, d, dx, dy); return true; }
     return false;
   }
@@ -901,16 +1050,25 @@
     if (t.shape === 'fan') {
       const dx = p.x - t.x, dy = p.y - t.y, dd = Math.hypot(dx, dy); let da = Math.abs(Math.atan2(dy, dx) - t.ang); if (da > Math.PI) da = Math.PI * 2 - da;
       hit = dd < t.range + 12 && da < t.arc / 2 + 0.12;
-      if (!SIM) playFx('melee', 2, t.x, t.y - 8, { ox: 0.3, oy: 0.5, rot: t.ang, s: t.range / 165, depth: 906 });
+      if (!SIM && t.fire) {   // 火焰吐息：沿扇形噴出火焰（11-22 驗收：原本沿用爪擊刀光，不像火）
+        for (let i = 0; i < 9; i++) { const a = t.ang + (i / 8 - 0.5) * t.arc, rr = t.range * (0.35 + 0.65 * ((i * 37) % 9) / 8); burst(t.x + Math.cos(a) * rr, t.y + Math.sin(a) * rr - 10, 6, { tint: i % 3 ? 0xff6a1c : 0xffc04a, v0: 30, v1: 110, l0: 220, l1: 480, grav: -60 }); }
+        playFx('world', 1, t.x + Math.cos(t.ang) * t.range * 0.55, t.y + Math.sin(t.ang) * t.range * 0.55, { oy: 0.62, s: t.range / 160, add: false, depth: 898, tint: 0xff6a1c }); camShake(110, 0.004);
+      } else if (!SIM) playFx('melee', 2, t.x, t.y - 8, { ox: 0.3, oy: 0.5, rot: t.ang, s: t.range / 165, depth: 906 });
     } else {
       hit = Math.hypot(p.x - t.x, p.y - t.y) < t.r;
-      if (!SIM) { playFx('world', 1, t.x, t.y, { oy: 0.62, s: t.r * 2 / 220, add: false, depth: 898 }); camShake(120, 0.004); }
+      if (!SIM) { playFx('world', 1, t.x, t.y, { oy: 0.62, s: t.r * 2 / 220, add: false, depth: 898, tint: t.pillar ? 0xff6a1c : 0xffffff }); if (t.pillar) burst(t.x, t.y - 12, 16, { tint: 0xff7a24, v0: 50, v1: 180, l0: 220, l1: 520, grav: 120 }); camShake(t.pillar ? 150 : 120, t.pillar ? 0.006 : 0.004); }
     }
     if (hit) { damagePlayer(t.dmg, { x: t.x, y: t.y, type: 'boss', bite: t.shape === 'fan' }); if (t.vuln) G.vuln = 5; }
   }
   const teleList = (es) => es.filter(e => e.tele > 0).map(e => ({ tx: e.tx, ty: e.ty, r: e.def.aoe.r }))
     .concat(es.filter(e => e.bite && !e.bite.go).map(e => ({ tx: e.x, ty: e.y, r: 78 })))
-    .concat(G.tg.map(t => t.shape === 'fan' ? { tx: t.x + Math.cos(t.ang) * t.range / 2, ty: t.y + Math.sin(t.ang) * t.range / 2, r: t.range / 2 + 12 } : { tx: t.x, ty: t.y, r: t.r }));
+    .concat(G.tg.map(t => t.shape === 'fan' ? { tx: t.x + Math.cos(t.ang) * t.range / 2, ty: t.y + Math.sin(t.ang) * t.range / 2, r: t.range / 2 + 12 } : { tx: t.x, ty: t.y, r: t.r }))
+    .concat(es.filter(e => e.ob && e.ob.phase === 'warn').map(e => ({ band: true, x: e.x, y: e.y, nx: e.ob.nx, ny: e.ob.ny, w: 25, len: 260, tx: e.x + e.ob.nx * 130, ty: e.y + e.ob.ny * 130, r: 130 })));
+  function hazardContains(h, x, y, pad) {
+    if (!h.band) return Math.hypot(x - h.tx, y - h.ty) < h.r + (pad || 0);
+    const dx = x - h.x, dy = y - h.y, along = dx * h.nx + dy * h.ny, side = Math.abs(dx * h.ny - dy * h.nx);
+    return along >= -pad && along <= h.len + pad && side <= h.w + pad;
+  }
   function stepBoss(e, dt, p, d, dx, dy) {   // 逆潮鏡獸
     const b = e.bs; b.clawCd -= dt; b.roarCd -= dt; b.shieldCd -= dt; b.summonCd -= dt; if (b.castT > 0) b.castT -= dt;
     if (b.shieldCd <= 0) { b.shieldCd = 15; e.shieldT = 3; floatText(e.x, e.y - 90, '鏡盾', '#9fd8ff', 16); }   // 鏡盾：3 秒內受到傷害 ×0.7
@@ -942,7 +1100,7 @@
     e.dead = true; G.xpGain = (G.xpGain || 0) + (TX.XP_OF[e.type] || 11); G.goldGain = (G.goldGain || 0) + TX.GOLD_PER_ENEMY; G.kills = (G.kills || 0) + 1;
     if (e.def.kind === 'mirror') G.tg = [];
     if (e.poison && G.st.poison >= 3) spreadPoison(e);
-    if (!SIM) { const gc = { green: 0x9aa7a0, red: 0xff8a50, blue: 0x5aa6e8, boss: 0xb0b8c8, tide: 0x5aa6e8, mage: 0x8ab4ff, fin: 0xff8a50, rare: 0x5aa6e8 }[e.type] || 0xc0c8d0, big = e.type === 'boss'; burst(e.x, e.y - 24, big ? 26 : 12, { tint: gc, key: 'fx_glow', add: false, v0: 50, v1: big ? 220 : 150, l0: 300, l1: 620, z0: 0.2, z1: big ? 0.6 : 0.4, grav: 260 }); playFx('world', 0, e.x, e.y, { oy: 0.78, s: big ? 1.9 : 0.8, add: false, tint: big ? 0xd0d8e8 : 0xffffff }); if (big) camShake(260, 0.01); }
+    if (!SIM) { const gc = { green: 0x9aa7a0, red: 0xff8a50, blue: 0x5aa6e8, boss: 0xb0b8c8, tide: 0x5aa6e8, mage: 0x8ab4ff, fin: 0xff8a50, rare: 0x5aa6e8, magmaking: 0xff6a1c }[e.type] || 0xc0c8d0, big = isBoss(e); burst(e.x, e.y - 24, big ? 26 : 12, { tint: gc, key: 'fx_glow', add: false, v0: 50, v1: big ? 220 : 150, l0: 300, l1: 620, z0: 0.2, z1: big ? 0.6 : 0.4, grav: 260 }); playFx('world', 0, e.x, e.y, { oy: 0.78, s: big ? 1.9 : 0.8, add: false, tint: big ? 0xd0d8e8 : 0xffffff }); if (big) camShake(260, 0.01); }
     const n = e.def.crystal;
     for (let i = 0; i < n; i++) G.pickups.push({ x: e.x + rand(-14, 14), y: e.y + rand(-10, 10), t: 0, fly: false });
     if (SIM) { e.sp.destroy(); return; }
@@ -984,7 +1142,7 @@
         if (e.def.art && e.tele < 0.5 && !e.slamAnim) { e.slamAnim = true; playEnemyAtk(e); }
         if (e.tele <= 0) {
           const a = e.def.aoe; playFx('world', 1, e.tx, e.ty, { oy: 0.62, s: a.r * 2 / 220, add: false, depth: 898 });
-          if (!SIM) { burst(e.tx, e.ty, e.type === 'boss' ? 16 : 8, { tint: 0xd8c8b0, add: false, v0: 40, v1: 150, l0: 300, l1: 600, z0: 0.3, z1: 0.6, grav: 120 }); camShake(e.type === 'boss' ? 200 : 100, e.type === 'boss' ? 0.008 : 0.003); }
+          if (!SIM) { burst(e.tx, e.ty, isBoss(e) ? 16 : 8, { tint: 0xd8c8b0, add: false, v0: 40, v1: 150, l0: 300, l1: 600, z0: 0.3, z1: 0.6, grav: 120 }); camShake(isBoss(e) ? 200 : 100, isBoss(e) ? 0.008 : 0.003); }
           const hit = Math.hypot(p.x - e.tx, p.y - e.ty) < a.r;
           if (e.tutDodgePending) { e.tutDodgePending = false; const t = G.tut; t.dodgeAttempts = (t.dodgeAttempts || 0) + 1; if (!hit || t.dodgeAttempts >= 3) { e.invuln = false; setTutorialStep('auto'); } else { t.hint = 'dodgeRetry'; e.aoeCd = 1.2; } }
           if (hit) damagePlayer(a.dmg * (e.dmgK || 1), { x: e.tx, y: e.ty, type: 'aoe_' + e.type });
@@ -1028,9 +1186,9 @@
         G.wave++;
         if (G.wave >= WAVES.length) { endGame(true); return; }
         G.spawnQ = []; WAVES[G.wave].forEach(([t, n]) => { for (let i = 0; i < n; i++) G.spawnQ.push(t); });
-        if (!LEGACY && G.wave === G.rareWave) G.spawnQ.push('rare');   // 稀有怪：每節 6% 機率中途出現
+        if (!LEGACY && G.wave === G.rareWave) G.spawnQ.push(IS_CH2 ? 'lavarare' : 'rare');   // 稀有怪：每節 6% 機率中途出現
         G.spawnQ.sort(() => Math.random() - 0.5); G.waveGap = 1.2; G.spawnT = 0; G.waveT = 0; (G.wt = G.wt || []).push(Math.round(G.t));
-        banner(G.wave === 0 && !LEGACY ? `第${NODE_N}節　${NODE_NAMES[NODE_N]}` : G.wave === WAVES.length - 1 ? (WAVES[G.wave].some(([t]) => t === 'boss') ? 'BOSS' : 'FINAL WAVE') : `WAVE ${G.wave + 1}`);
+        banner(G.wave === 0 && !LEGACY ? `第${NODE_N}節　${NODE_NAMES[NODE_N]}` : G.wave === WAVES.length - 1 ? (WAVES[G.wave].some(([t]) => t === 'boss' || t === 'magmaking') ? 'BOSS' : 'FINAL WAVE') : `WAVE ${G.wave + 1}`);
       }
     }
   }
@@ -1184,11 +1342,12 @@
     sc.textures.addCanvas(outKey, cv);
   }
   function buildGround() {
-    sc.add.tileSprite(0, 0, WORLD_W, WORLD_H, 'ground_stone').setOrigin(0).setTileScale(0.55).setDepth(-10);
-    ['crack', 'ash', 'wet'].forEach(n => makePatch('ground_' + n, 'patch_' + n, 360));
+    const groundMain = IS_CH2 ? 'ground_rock' : 'ground_stone', patchNames = IS_CH2 ? ['crack', 'ash', 'glass'] : ['crack', 'ash', 'wet'];
+    sc.add.tileSprite(0, 0, WORLD_W, WORLD_H, groundMain).setOrigin(0).setTileScale(0.55).setDepth(-10);
+    patchNames.forEach(n => makePatch('ground_' + n, 'patch_' + n, 360));
     // 固定亂數，讓每次開局地面一樣
     let seed = 20261116; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
-    const kinds = ['crack', 'ash', 'wet', 'crack', 'wet', 'ash'];
+    const kinds = IS_CH2 ? ['crack', 'ash', 'glass', 'crack', 'glass', 'ash'] : ['crack', 'ash', 'wet', 'crack', 'wet', 'ash'];
     for (let k = 0; k < 34; k++) {
       const n = kinds[k % kinds.length], sz = 260 + rnd() * 220;
       const px = rnd() * WORLD_W, py = rnd() * WORLD_H, pa = 0.55 + rnd() * 0.35;
@@ -1201,7 +1360,7 @@
   function buildMiniTex() {
     const K = 0.4, cv = document.createElement('canvas'); cv.width = Math.round(WORLD_W * K); cv.height = Math.round(WORLD_H * K);
     const c = cv.getContext('2d'), src = n => sc.textures.get(n).getSourceImage();
-    const gs = src('ground_stone'), tw = gs.width * 0.55 * K, th = gs.height * 0.55 * K;
+    const gs = src(IS_CH2 ? 'ground_rock' : 'ground_stone'), tw = gs.width * 0.55 * K, th = gs.height * 0.55 * K;
     for (let y = 0; y < cv.height; y += th) for (let x = 0; x < cv.width; x += tw) c.drawImage(gs, x, y, tw + 1, th + 1);
     (sc.patchList || []).forEach(q => { c.globalAlpha = q.a; c.drawImage(src('patch_' + q.n), (q.x - q.sz / 2) * K, (q.y - q.sz / 2) * K, q.sz * K, q.sz * K); });
     c.globalAlpha = 1; c.fillStyle = 'rgba(12,10,18,0.18)'; c.fillRect(0, 0, cv.width, cv.height);
@@ -1276,7 +1435,7 @@
     uiButton(W / 2, py + 120, 200, 54, '繼續', () => resumeGame(), { depth: 2103 });
     uiButton(W / 2, py + 186, 200, 54, '重新開始', () => location.reload(), { depth: 2103 });
     if (TUT) uiButton(W / 2, py + 218, 200, 42, TUT_TEXT.ui.skip, () => skipTutorial(), { depth: 2103 });
-    if (REAL) uiButton(W / 2, py + 252, 200, 54, '放棄', () => { location.search = '?pick=' + HERO_ID; }, { depth: 2103 });   // 放棄＝不給經驗金幣、不算通關（jun 11-21）
+    if (REAL) uiButton(W / 2, py + 252, 200, 54, '放棄', () => { location.search = '?pick=' + HERO_ID + (IS_CH2 ? '&ch=2' : ''); }, { depth: 2103 });   // 放棄＝不給經驗金幣、不算通關（jun 11-21）
     else uiButton(W / 2, py + 252, 200, 54, '換角色', () => { const q = new URLSearchParams(location.search); q.delete('hero'); q.delete('team'); location.search = q.toString(); }, { depth: 2103 });
     if (REAL) UT(W / 2, py + ph - 14, '放棄不會獲得經驗與金幣', 10, '#8a7a60', 2103).setOrigin(0.5);
     G.pauseObjs = sc.children.list.slice(n0);
@@ -1680,7 +1839,7 @@
     uiPanel(g, W - 104, 5, 98, 22, 8, 0.92);                                   // 波數牌
     uiPanel(g, 6, 74, 170, 22, 8, 0.9);                                         // 成長／結晶牌
     SKILLS.filter(s2 => G.st[s2.id]).forEach((s2, i) => { const x = 19 + (i % 9) * 27, y = 114 + Math.floor(i / 9) * 34; skillMedal(g, s2.id, x, y, 10, false); skillPips(g, x, y + 17, G.st[s2.id], s2.max, false, 2.2); });
-    { const bs = G.enemies.find(e => !e.dead && (e.def.kind === 'mirror' || e.tutBoss));
+    { const bs = G.enemies.find(e => !e.dead && (isBoss(e) || e.tutBoss));
       if (bs) { uiPanel(g, 20, 140, 270, 30, 9, 0.92); uiBar(g, 32, 157, 246, 8, Math.max(0, bs.hp) / bs.maxHp, 0x9fd8ff, 0x2a6aa8, 0); sc.hudTexts.boss.setText(bs.def.name + (bs.shieldT > 0 ? '　鏡盾' : '')).setPosition(155, 142); } else sc.hudTexts.boss.setText(''); }
     drawMiniMap(g); drawAuto(g);
     if (TUT && G.tut && /^skill[123]$/.test(G.tut.phase)) { const i = +G.tut.phase.slice(-1) - 1; g.lineStyle(3, 0xffd24a, 0.9); g.strokeCircle(SK_POS[i][0], SK_POS[i][1], 34 + Math.sin(G.t * 6) * 4); }
@@ -1779,7 +1938,7 @@
       resolveSolid(p, 12);
       faceTo(mx, my);
     } else if (p.atkLock <= 0) tryAttack();
-    updateWaves(dt); updateEnemies(dt); updateShots(dt); updatePickups(dt); updateSkillsTimers(dt); updateSwaves(dt); updateTg(dt); updateTutorial();
+    updateWaves(dt); updateEnemies(dt); updateLavaMarks(dt); updateShots(dt); updatePickups(dt); updateSkillsTimers(dt); updateSwaves(dt); updateTg(dt); updateTutorial();
     if (SIM && G.t > 100 && !G.dbg1 && G.state === 'play') G.dbg1 = G.enemies.filter(e => !e.dead).map(e => [e.type, Math.round(dist(e, G.pl)), Math.round(e.x), Math.round(e.y), Math.round(e.stun * 10) / 10, e.tele > 0 ? 1 : 0]).concat([['pl', Math.round(G.pl.x), Math.round(G.pl.y), AI.mode]]);
     if (SIM && G.t > 300 && G.state === 'play') { G.lastSrc = 'timeout'; endGame(false); }
   }
@@ -1802,7 +1961,7 @@
       if (G.cd[0] <= 0 && (G.pools || []).length < 2 && nearest(300)) castSkill(0);
       return;
     }
-    if (G.cd[2] <= 0 && (marks.length >= 2 || marks.some(e => e.type === 'boss'))) { castSkill(2); return; }
+    if (G.cd[2] <= 0 && (marks.length >= 2 || marks.some(isBoss))) { castSkill(2); return; }
     if (inTele && G.cd[1] <= 0 && (AI.mx || AI.my)) { G.lastMove = { x: AI.mx, y: AI.my }; if (castSkill(1, true)) return; }
     if (G.cd[1] <= 0) { const far = marks.filter(e => dist(e, p) > 150 && dist(e, p) < 380)[0]; if (far && !nearest(60)) { if (castSkill(1)) return; } }
     if (G.cd[0] <= 0 && marks.length < 4 && nearest(340)) castSkill(0);
@@ -1819,10 +1978,10 @@
     // 必殺：集氣滿，且周圍 3 隻以上／首領在範圍內／血量低時近身有敵人
     if (G.gauge >= 100) {
       const u = d.ult, inR = es.filter(e => edge(e) < u.r);
-      if (inR.length >= 3 || inR.some(e => e.type === 'boss') || (hpR < 0.4 && inR.length >= 1)) ultimate();
+      if (inR.length >= 3 || inR.some(isBoss) || (hpR < 0.4 && inR.length >= 1)) ultimate();
     }
     const tele = teleList(es);
-    const inTele = tele.some(e => Math.hypot(p.x - e.tx, p.y - e.ty) < e.r + 28);
+    const inTele = tele.some(e => hazardContains(e, p.x, p.y, 28));
     if (HERO_SK[act().id]) autoCast(es, inTele);
     const kiteD = AI.mode === 'kite' ? 78 : 34;   // 退開後要拉開到 78 才停（避免來回抖動）
     const close = es.some(e => dist(e, p) < e.def.r + 14 + kiteD);
@@ -1835,9 +1994,10 @@
       let sc0 = 0;
       for (const e of es) {
         const dd = Math.hypot(e.x - x, e.y - y) - e.def.spd * 0.45 - (e.def.r + 14);
-        if (dd < 70) sc0 -= (70 - Math.max(dd, -20)) * (e.def.dmg / 6) * (e.def.aoe ? 1.3 : 1) * (e.type === 'boss' ? 1.5 : 1);
+        if (dd < 70) sc0 -= (70 - Math.max(dd, -20)) * (e.def.dmg / 6) * (e.def.aoe ? 1.3 : 1) * (isBoss(e) ? 1.5 : 1);
       }
-      for (const t of tele) { const dc = Math.hypot(x - t.tx, y - t.ty) - (t.r + 28); if (dc < 0) sc0 -= 300 - dc * 3; }
+      for (const t of tele) { if (t.band) { if (hazardContains(t, x, y, 28)) sc0 -= 560; } else { const dc = Math.hypot(x - t.tx, y - t.ty) - (t.r + 28); if (dc < 0) sc0 -= 300 - dc * 3; } }
+      if (lavaMarkHit(x, y)) sc0 -= 520;
       const m = Math.min(x - ARENA.x0, ARENA.x1 - x, y - ARENA.y0, ARENA.y1 - y);
       if (m < 90) sc0 -= (90 - m) * 1.2;
       if (inForest(x, y)) sc0 -= 30;
@@ -1857,8 +2017,8 @@
           let fl = 0; while (fl < 220) { const qx = p.x + dx * (fl + 14), qy = p.y + dy * (fl + 14); if (solidAt(qx, qy, 14) || qx < ARENA.x0 + 8 || qx > ARENA.x1 - 8 || qy < ARENA.y0 + 8 || qy > ARENA.y1 - 8) break; fl += 14; }
           const ex = p.x + dx * fl, ey = p.y + dy * fl;
           for (const t of tele) {
-            const dc = Math.hypot(ex - t.tx, ey - t.ty) - (t.r + 28);
-            if (dc < 0) v -= 250 - dc * 3;
+            if (t.band) { if (hazardContains(t, ex, ey, 28)) v -= 480; }
+            else { const dc = Math.hypot(ex - t.tx, ey - t.ty) - (t.r + 28); if (dc < 0) v -= 250 - dc * 3; }
             v += (dx * (p.x - t.tx) + dy * (p.y - t.ty)) / (Math.hypot(p.x - t.tx, p.y - t.ty) || 1) * 30;
           }
           v += fl * 0.25;
@@ -1869,6 +2029,7 @@
       AI.mx = best[0]; AI.my = best[1];
     };
     if (inTele) { AI.mode = 'dodge'; const nr = es.slice().sort((x, y) => dist(x, p) - dist(y, p))[0]; pick(nr ? { x: nr.x, y: nr.y } : null); return; }   // 閃避時順便朝最近敵人靠近
+    if (lavaMarkHit(p.x, p.y) && (hpR < 0.5 || !nearest(R))) { AI.mode = 'dodge'; pick(null); return; }   // 熔痕每秒只 3 傷：射程內有敵人且血量過半就留下輸出（11-22 驗收：原本一踩就閃，幾乎不出手→第9節超時）
     if (close) { AI.mode = 'kite'; pick(null); return; }
     if (nearest(R)) { AI.mode = 'attack'; none(); return; }
     // 沒有敵人在射程：先撿近處結晶，否則朝最近敵人靠近到射程邊緣
@@ -1877,7 +2038,7 @@
       if (AI.mode !== 'crystal' || AI.cr !== cr) { AI.cr = cr; AI.cT = 0; } AI.cT += 0.1;
       if (AI.cT > 4) { cr.skip = true; } else { AI.mode = 'crystal'; pick(cr); return; }
     }
-    const tg = es.sort((a, b) => dist(a, p) - dist(b, p))[0];
+    const tg = es.slice().sort((a, b) => (dist(a, p) * (a.type === 'whitepriest' ? 0.55 : 1)) - (dist(b, p) * (b.type === 'whitepriest' ? 0.55 : 1)))[0];
     if (tg) { AI.mode = 'chase'; pick({ x: tg.x, y: tg.y }); return; }
     AI.mode = 'wait'; none();
   }
@@ -1927,7 +2088,7 @@
   }
 
   function render() {
-    const p = G.pl, g = sc.gWorld; g.clear();
+    const p = G.pl, g = sc.gWorld; g.clear(); drawLavaMarks(g);
     if (TUT && G.tut && G.tut.phase === 'move') { const r = 30 + Math.sin(G.t * 5) * 4; g.fillStyle(0xffd24a, 0.18); g.fillCircle(G.tut.target.x, G.tut.target.y, r); g.lineStyle(3, 0xffd24a, 0.95); g.strokeCircle(G.tut.target.x, G.tut.target.y, r + 8); g.lineStyle(2, 0xfff0a0, 0.7); g.strokeCircle(G.tut.target.x, G.tut.target.y, r * 0.55); }
     if (G.state === 'play' || G.state === 'pick' || G.state === 'map') {
       const d = def(), R = d.range * rangeMul(), ready = p.atkCd <= 0;
@@ -1979,6 +2140,13 @@
         g.lineStyle(2, 0xffb070, 0.35 + 0.4 * pu); g.strokeCircle(e.tx, e.ty, a.r * 0.62);
         g.lineStyle(4, 0xff5a40, 0.65 + 0.3 * pu); g.strokeCircle(e.tx, e.ty, a.r);
         for (let i = 0; i < 14; i++) { const a0 = i * Math.PI * 2 / 14 + G.t * 0.8; g.lineStyle(3, 0xffe0a0, 0.8); g.beginPath(); g.arc(e.tx, e.ty, a.r + 5, a0, a0 + 0.11, false); g.strokePath(); }
+      }
+      if (e.ob && e.ob.phase === 'warn') {
+        const pr = 1 - e.ob.t / C2.obWarn, pu = 0.5 + 0.5 * Math.sin(G.t * 16), x2 = e.x + e.ob.nx * 260, y2 = e.y + e.ob.ny * 260, sx = e.ob.ny * 25, sy = -e.ob.nx * 25;
+        g.fillStyle(0x3a0a06, 0.32); g.beginPath(); g.moveTo(e.x + sx, e.y + sy); g.lineTo(e.x - sx, e.y - sy); g.lineTo(x2 - sx, y2 - sy); g.lineTo(x2 + sx, y2 + sy); g.closePath(); g.fillPath();
+        const fx = e.x + e.ob.nx * 260 * pr, fy = e.y + e.ob.ny * 260 * pr;
+        g.fillStyle(0xff4a2a, 0.18 + 0.24 * pr); g.beginPath(); g.moveTo(e.x + sx, e.y + sy); g.lineTo(e.x - sx, e.y - sy); g.lineTo(fx - sx, fy - sy); g.lineTo(fx + sx, fy + sy); g.closePath(); g.fillPath();
+        g.lineStyle(4, 0xff5a40, 0.65 + 0.3 * pu); g.beginPath(); g.moveTo(e.x + sx, e.y + sy); g.lineTo(x2 + sx, y2 + sy); g.lineTo(x2 - sx, y2 - sy); g.lineTo(e.x - sx, e.y - sy); g.closePath(); g.strokePath();
       }
     });
     G.enemies.forEach(e => { if (!e.dead && e.bite && !e.bite.go) { const pu = 0.5 + 0.5 * Math.sin(G.t * 20); g.lineStyle(3, 0xff5a40, 0.5 + 0.4 * pu); g.strokeCircle(e.x, e.y, 78); g.fillStyle(0xff4a2a, 0.12 + 0.2 * (1 - e.bite.t / 0.4)); g.fillCircle(e.x, e.y, 78 * (1 - e.bite.t / 0.4)); } });
@@ -2067,7 +2235,7 @@
     G.pickups.forEach(c => { const x = ox + c.x * k, y = oy + c.y * k, r = 2.2 * f; g.fillStyle(0x9fe6ff, 1); g.fillTriangle(x, y - r, x + r, y, x, y + r); g.fillTriangle(x, y - r, x - r, y, x, y + r); });
     G.enemies.forEach(e => {
       if (e.dead) return;
-      const x = ox + e.x * k, y = oy + e.y * k, boss = e.type === 'boss';
+      const x = ox + e.x * k, y = oy + e.y * k, boss = isBoss(e);
       if (boss) { const pu = 0.5 + 0.5 * Math.sin(t * 6); g.fillStyle(0xff3aa0, 0.25 + 0.2 * pu); g.fillCircle(x, y, (6 + 2 * pu) * f); }
       g.fillStyle(0x000000, 0.8); g.fillCircle(x, y, (boss ? 4.4 : 3.1) * f);
       g.fillStyle(boss ? 0xff4fb0 : 0xff4a3a, 1); g.fillCircle(x, y, (boss ? 3.4 : 2.2) * f);
@@ -2135,9 +2303,9 @@
     if (SIM) { simRecord(win); return; }
     let rw = null;   // 結算獎勵（只有從選關畫面正式開戰時才結算並存檔）
     if (REAL) {
-      const h = TX.hero(SAVE, HERO_ID), xp = win ? (G.xpGain || 0) : Math.floor((G.xpGain || 0) * TX.LOSE_XP_RATE), first = TUT ? win && SAVE.prologueCleared.indexOf(TUT) < 0 : win && !TX.isCleared(SAVE, NODE_N);
+      const clearKey = CH_DATA.key || (IS_CH2 ? 'cleared2' : 'cleared'), h = TX.hero(SAVE, HERO_ID), xp = win ? (G.xpGain || 0) : Math.floor((G.xpGain || 0) * TX.LOSE_XP_RATE), first = TUT ? win && SAVE.prologueCleared.indexOf(TUT) < 0 : win && !TX.isCleared(SAVE, NODE_N, CH_N);
       const fg = first ? (TUT ? 50 * TUT : TX.FIRST_CLEAR_GOLD * NODE_N) : 0, gold = win ? (G.goldGain || 0) + fg : 0, r = TX.addXp(h, xp);
-      SAVE.gold += gold; if (first) TUT ? SAVE.prologueCleared.push(TUT) : SAVE.cleared.push(NODE_N);
+      SAVE[clearKey] = SAVE[clearKey] || []; SAVE.gold += gold; if (first) TUT ? SAVE.prologueCleared.push(TUT) : SAVE[clearKey].push(NODE_N);
       if (TUT === 3 && win) SAVE.tutorialDone = true;
       TX.save(SAVE);
       rw = { xp, gold, fg, first, from: r.from, to: r.to, cur: h.xp, need: TX.xpNeed(h.lv), cap: h.lv >= TX.LV_CAP, total: SAVE.gold };
@@ -2186,7 +2354,7 @@
     uiButton(W / 2 - 80, py + ph - 42, 150, 56, '再玩一次', () => location.reload(), { depth: 2003, fs: 18 });
     if (REAL && TUT && win && TUT < 3) uiButton(W / 2 + 80, py + ph - 42, 150, 56, TUT_TEXT.ui.nextNode, () => { location.search = '?hero=' + HERO_ID + '&tut=' + (TUT + 1) + '&real=1'; }, { depth: 2003, fs: 18 });
     else if (REAL && TUT === 3 && win) uiButton(W / 2 + 80, py + ph - 42, 150, 56, TUT_TEXT.ui.toMap, () => { location.search = '?map=' + HERO_ID; }, { depth: 2003, fs: 18 });
-    else if (REAL) uiButton(W / 2 + 80, py + ph - 42, 150, 56, '回選關', () => { location.search = '?pick=' + HERO_ID; }, { depth: 2003, fs: 18 });
+    else if (REAL) uiButton(W / 2 + 80, py + ph - 42, 150, 56, '回選關', () => { location.search = '?pick=' + HERO_ID + (IS_CH2 ? '&ch=2' : ''); }, { depth: 2003, fs: 18 });
     else uiButton(W / 2 + 80, py + ph - 42, 150, 56, '換角色', () => { const q = new URLSearchParams(location.search); q.delete('hero'); q.delete('team'); location.search = q.toString(); }, { depth: 2003, fs: 18 });
   }
 

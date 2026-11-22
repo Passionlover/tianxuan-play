@@ -88,5 +88,65 @@
   "w": 486,
   "h": 427,
   "magentaPixels": 0
+ },
+ "ch2_rock_obsidian": {
+  "w": 483,
+  "h": 475,
+  "magentaPixels": 0
+ },
+ "ch2_rock_lavahill": {
+  "w": 467,
+  "h": 295,
+  "magentaPixels": 0
+ },
+ "ch2_rock_cliff": {
+  "w": 491,
+  "h": 203,
+  "magentaPixels": 0
+ },
+ "ch2_rock_spires": {
+  "w": 429,
+  "h": 438,
+  "magentaPixels": 0
+ },
+ "ch2_lava_pool": {
+  "w": 470,
+  "h": 213,
+  "magentaPixels": 0
+ },
+ "ch2_rock_boulder": {
+  "w": 382,
+  "h": 292,
+  "magentaPixels": 0
+ },
+ "ch2_bld_house": {
+  "w": 469,
+  "h": 464,
+  "magentaPixels": 0
+ },
+ "ch2_bld_ruin": {
+  "w": 463,
+  "h": 427,
+  "magentaPixels": 0
+ },
+ "ch2_altar": {
+  "w": 449,
+  "h": 448,
+  "magentaPixels": 0
+ },
+ "ch2_river_straight": {
+  "w": 475,
+  "h": 287,
+  "magentaPixels": 0
+ },
+ "ch2_river_bend": {
+  "w": 426,
+  "h": 374,
+  "magentaPixels": 0
+ },
+ "ch2_bridge": {
+  "w": 480,
+  "h": 351,
+  "magentaPixels": 0
  }
 }
