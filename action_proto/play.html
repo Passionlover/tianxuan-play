@@ -244,7 +244,15 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
   var cur = 0, frame = 1, timer = null, skOn = 0, last = null;
   try { last = localStorage.getItem('apLastHero'); } catch (e) {}
   for (var i = 0; i < H.length; i++) if (H[i].id === last) cur = i;
-  var LH = { zane: [672, 971, 0.873], sere: [620, 939, 0.847], oz: [594, 672, 0.859] };   // 11-22 實測頭頂到腳底再校正：身高 澤恩 0.74、瑟蕾 0.72（略矮）、歐斯 0.85（壯碩坦克明顯較高大）；第3個＝整張圖占舞台高度比例   // 第3個＝圖高占舞台高度比例；依「頭頂到腳底」的身高對齊三人（含特效環／法杖的圖高不同）
+  var LH = { zane: [672, 971, 0.802], sere: [620, 939, 0.824], oz: [594, 672, 0.859] };   // 11-22 第二次校正（實測頭頂到腳底）：身高佔舞台 澤恩0.68（刺客不高大）、瑟蕾0.70、歐斯0.85（壯碩坦克最高大）；第3個＝整張圖占舞台高度比例
+  // 角色小人（待機圖）實測：圖檔寬高、身高（不透明像素）、腳底列；澤恩圖是 96×96、其他 96×144，不能用同一個框硬塞（會變形）
+  var SPR = { zane: { w: 96, h: 96, body: 71, feet: 92 }, sere: { w: 96, h: 144, body: 87, feet: 140 }, oz: { w: 96, h: 144, body: 80, feet: 141 } };
+  var BODY_K = { zane: 0.68, sere: 0.70, oz: 0.85 };   // 與立繪相同的身高比例
+  function sprFit(el, id, maxBody, bottom) {   // maxBody＝歐斯（最高）的身高 px；其他人依 BODY_K 等比例
+    var p = SPR[id] || SPR.sere, k = maxBody * (BODY_K[id] || 0.7) / 0.85 / p.body;
+    el.style.width = (p.w * k) + 'px'; el.style.height = (p.h * k) + 'px';
+    if (bottom != null) { el.style.marginLeft = (-p.w * k / 2) + 'px'; el.style.bottom = (bottom - (p.h - p.feet) * k) + 'px'; }
+  }
   var asset = function (id, n) { return '../game/assets/hd_' + id + '_1_idleA_f' + n + '.png'; };
   var SLOT = { '一技': '技一', '二技': '技二', '三技': '技三', '必殺': '必殺', '被動': '被動' };
   function cds(s) { return s.cd && s.cd !== '—' && s.slot !== '必殺' ? s.cd : (s.slot === '必殺' ? '集氣滿' : ''); }
@@ -280,6 +288,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
   H.forEach(function (h, i) {
     var c = document.createElement('div'); c.className = 'card frame'; c.style.setProperty('--ac', AC[h.attr] || '#ffd84a');
     c.innerHTML = '<div class="im" style="background-image:url(' + asset(h.id, 1) + ')"></div><div class="cn">' + h.name + '</div>';
+    sprFit(c.querySelector('.im'), h.id, 46, 18);
     c.onclick = function () { cur = i; render(); };
     $('cards').appendChild(c);
   });
@@ -300,7 +309,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     refreshLevels();
     try { localStorage.setItem('apLastHero', h.id); } catch (e) {}
     sel.style.display = 'none'; wmap.style.display = 'none'; stg.style.display = 'block'; stg.style.setProperty('--ac', ac);
-    $('s_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')';
+    $('s_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')'; sprFit($('s_im'), h.id, 58);
     var isPrologue = chapterId === 0;
     $('stg').querySelector('h1').textContent = isPrologue ? '序章' : '第 1 章';
     $('stg').querySelector('.sub').textContent = isPrologue ? '燼潮鎮・選擇教學節' : '選擇要挑戰的關卡';
@@ -329,7 +338,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     refreshLevels();
     try { localStorage.setItem('apLastHero', h.id); } catch (e) {}
     sel.style.display = 'none'; stg.style.display = 'none'; wmap.style.display = 'block';
-    $('m_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')'; $('m_nm').textContent = h.name + '　Lv ' + hs.lv;
+    $('m_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')'; sprFit($('m_im'), h.id, 38); $('m_nm').textContent = h.name + '　Lv ' + hs.lv;
     $('m_xt').textContent = hs.lv >= TX.LV_CAP ? '已達等級上限' : '冒險準備完畢'; $('m_gold').textContent = SV.gold;
     map.innerHTML = '';
     TX.CHAPTERS.forEach(function (ch) {
