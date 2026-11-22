@@ -117,7 +117,7 @@
   const ZOOM = (() => { const z = parseFloat(QS.get('zoom')); return z > 0.3 && z <= 1.2 ? z : 0.65; })(), VIS = ZOOM < 1 ? 1.25 : 1;
   const RS = (() => { const r = parseFloat(QS.get('rs')); return r >= 1 && r <= 3 ? r : (SET.hd ? 2 : 1); })();   // 渲染解析度倍率：網址指定時優先，否則使用設定
   const TIME_SCALE = Number(QS.get('speed')) || 1;
-  const VERSION = '原型 v55（序章教學）';
+  const VERSION = '原型 v56（載入進度條）';
   const SIM = Number(QS.get('sim')) || 0;   // ?sim=N：加速模擬 N 局，統計勝率
   const GOLD = 0xe8b84a;
   function camShake(dur, amp) { if (SET.shake && sc && sc.cameras && sc.cameras.main) sc.cameras.main.shake(dur, amp); }
@@ -267,6 +267,10 @@
   };
 
   function preload() {
+    if (!SIM && window.__setLoading) {
+      this.load.on('progress', function (value) { window.__setLoading(value); });
+      window.__setLoading(0);
+    }
     this.load.image('bg', A + 'bg_prologue.webp');
     if (TUT) this.load.image('serloan_portrait', A + 'lihui_serloan.png');
     this.load.image('bg_chapter', A + CHAPTER_BG);   // 結算／暫停畫面背景：該章節的戰鬥場景圖（所有角色都載入）
@@ -306,6 +310,7 @@
 
   function create() {
     sc = this;
+    if (!SIM && window.__hideLoading) window.__hideLoading();
     { // 世界鏡頭縮放；介面（scrollFactor 0 的物件）改由獨立的 1:1 鏡頭繪製
       sc.cameras.main.setZoom(ZOOM * RS);
       sc.uiCam = sc.cameras.add(0, 0, W * RS, H * RS); sc.uiCam.setName('ui'); sc.uiCam.setOrigin(0, 0); sc.uiCam.setZoom(RS);   // 介面用 390×844 座標：畫面像素 = 座標 × RS

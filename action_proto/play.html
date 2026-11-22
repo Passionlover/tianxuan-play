@@ -10,6 +10,19 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
 #game{width:min(390px,100vw);height:100dvh;margin:0 auto;display:block}
 #game canvas{display:block}
 
+/* ---------- 戰鬥載入畫面（P4）---------- */
+#loading{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:linear-gradient(rgba(6,4,10,.82),rgba(6,4,10,.94)),url(../game/assets/bg_water.webp) center/cover no-repeat;color:#f1e6d2;font-family:"Noto Serif TC","PMingLiU",serif;opacity:1;transition:opacity .35s ease}
+#loading.hide{opacity:0;pointer-events:none}
+#loading .panel{width:min(320px,calc(100vw - 48px));text-align:center}
+#loading h1{margin:0;color:#ffe6a8;font-size:24px;letter-spacing:7px;text-indent:7px;text-shadow:0 2px 0 #000,0 0 14px rgba(255,200,110,.35)}
+#loading .sub{margin:8px 0 22px;color:#a8987a;font:11px "Microsoft JhengHei","PingFang TC",sans-serif;letter-spacing:2px}
+#loading .track{height:14px;padding:2px;border:2px solid #b8924c;border-radius:9px;background:rgba(12,8,6,.78);box-shadow:0 0 0 1px #3a2410,inset 0 2px 5px #000}
+#loading .fill{width:0;height:100%;border-radius:5px;background:linear-gradient(90deg,#b27a22,#ffe6a8,#d5962e);box-shadow:0 0 10px rgba(255,214,140,.6);transition:width .18s ease}
+#loading.preparing .fill{width:34%;background:linear-gradient(90deg,#8a5d1d,#ffe6a8,#8a5d1d);background-size:200% 100%;animation:loading-sheen 1.3s linear infinite}
+#loading .percent{margin-top:9px;color:#ffe6a8;font:12px "Microsoft JhengHei","PingFang TC",sans-serif;letter-spacing:1px}
+#loading .hint{margin-top:18px;color:#a8987a;font:11px "Microsoft JhengHei","PingFang TC",sans-serif;letter-spacing:1px}
+@keyframes loading-sheen{from{background-position:100% 0}to{background-position:-100% 0}}
+
 /* ---------- 選角畫面（11-21）---------- */
 #sel{position:fixed;inset:0;z-index:10;display:none;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;color:#f1e6d2;
   background:radial-gradient(120% 70% at 50% 18%,#3a2a1c 0%,#1a110b 55%,#0c0806 100%)}
@@ -146,6 +159,30 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
 </head>
 <body>
 <div id="game"></div>
+<div id="loading" class="preparing" aria-live="polite"><div class="panel">
+  <h1>天選者傳說</h1><div class="sub">正在進入戰場</div>
+  <div class="track"><div class="fill"></div></div><div class="percent">準備中</div>
+  <div class="hint">第一次載入需要一點時間</div>
+</div></div>
+<script>
+(function () {
+  var box = document.getElementById('loading'), fill = box.querySelector('.fill'), pct = box.querySelector('.percent');
+  window.__showLoading = function () {
+    if (new URLSearchParams(location.search).get('sim')) return;
+    box.classList.remove('hide'); box.classList.add('preparing'); box.style.display = 'flex'; fill.style.width = '34%'; pct.textContent = '準備中';
+  };
+  window.__setLoading = function (value) {
+    if (new URLSearchParams(location.search).get('sim')) return;
+    var n = Math.max(0, Math.min(1, Number(value) || 0));
+    box.classList.remove('preparing'); fill.style.width = (n * 100).toFixed(1) + '%'; pct.textContent = Math.round(n * 100) + '%';
+  };
+  window.__hideLoading = function () {
+    if (new URLSearchParams(location.search).get('sim')) return;
+    box.classList.remove('preparing'); fill.style.width = '100%'; pct.textContent = '100%'; box.classList.add('hide');
+    setTimeout(function () { box.style.display = 'none'; }, 380);
+  };
+})();
+</script>
 <div id="ttl"><div class="wrap"><div class="shade"></div>
   <button class="gear" id="ttl-settings" aria-label="設定"><svg viewBox="0 0 24 24"><path d="M9.7 2h4.6l.6 2.2 1.7.7 2-1.1 3.2 3.2-1.1 2 .7 1.7L24 9.3v4.6l-2.2.6-.7 1.7 1.1 2-3.2 3.2-2-1.1-1.7.7-.6 2.2H9.7l-.6-2.2-1.7-.7-2 1.1-3.2-3.2 1.1-2-.7-1.7L0 13.9V9.3l2.2-.6.7-1.7-1.1-2L5 1.8l2 1.1 1.7-.7L9.7 2Zm2.3 6a3.6 3.6 0 1 0 0 7.2A3.6 3.6 0 0 0 12 8Z"/></svg></button>
   <div class="logo"><div class="s">LEGEND OF THE CHOSEN</div><h1>天選者傳說</h1><div class="line"></div></div>
@@ -193,6 +230,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
 (function () {
   var QS = new URLSearchParams(location.search);
   function startGame() {
+    if (!QS.get('sim')) window.__showLoading && window.__showLoading();
     // 每次開啟都用時間戳載入，瀏覽器不會用到舊版快取
     document.write('<script src="../game/lib/phaser.min.js?t=' + Date.now() + '"><\/script>');
     document.write('<script src="game.js?t=' + Date.now() + '"><\/script>');
@@ -206,7 +244,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
   var cur = 0, frame = 1, timer = null, skOn = 0, last = null;
   try { last = localStorage.getItem('apLastHero'); } catch (e) {}
   for (var i = 0; i < H.length; i++) if (H[i].id === last) cur = i;
-  var LH = { zane: [672, 971, 0.858], sere: [620, 939, 0.939], oz: [594, 672, 0.749] };   // 第3個＝圖高占舞台高度比例；依「頭頂到腳底」的身高對齊三人（含特效環／法杖的圖高不同）
+  var LH = { zane: [672, 971, 0.873], sere: [620, 939, 0.847], oz: [594, 672, 0.859] };   // 11-22 實測頭頂到腳底再校正：身高 澤恩 0.74、瑟蕾 0.72（略矮）、歐斯 0.85（壯碩坦克明顯較高大）；第3個＝整張圖占舞台高度比例   // 第3個＝圖高占舞台高度比例；依「頭頂到腳底」的身高對齊三人（含特效環／法杖的圖高不同）
   var asset = function (id, n) { return '../game/assets/hd_' + id + '_1_idleA_f' + n + '.png'; };
   var SLOT = { '一技': '技一', '二技': '技二', '三技': '技三', '必殺': '必殺', '被動': '被動' };
   function cds(s) { return s.cd && s.cd !== '—' && s.slot !== '必殺' ? s.cd : (s.slot === '必殺' ? '集氣滿' : ''); }
@@ -252,6 +290,7 @@ html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:n
     QS.delete('pick'); QS.delete('map'); QS.set('hero', H[cur].id); QS.set('node', String(nodeN)); QS.set('real', '1');
     if (tut) QS.set('tut', String(tut)); else QS.delete('tut');
     history.replaceState(null, '', location.pathname + '?' + QS.toString());
+    window.__showLoading && window.__showLoading();
     var s1 = document.createElement('script'); s1.src = '../game/lib/phaser.min.js?t=' + Date.now();
     s1.onload = function () { var s2 = document.createElement('script'); s2.src = 'game.js?t=' + Date.now(); document.body.appendChild(s2); };
     document.body.appendChild(s1);
