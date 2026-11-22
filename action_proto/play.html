@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>天選者傳說 · 即時動作原型</title>
+<style>
+html,body{margin:0;height:100%;background:#0c0806;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+#game{width:min(390px,100vw);height:100dvh;margin:0 auto;display:block}
+#game canvas{display:block}
+
+/* ---------- 選角畫面（11-21）---------- */
+#sel{position:fixed;inset:0;z-index:10;display:none;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;color:#f1e6d2;
+  background:radial-gradient(120% 70% at 50% 18%,#3a2a1c 0%,#1a110b 55%,#0c0806 100%)}
+#sel .wrap{width:min(390px,100vw);height:100dvh;margin:0 auto;display:flex;flex-direction:column;box-sizing:border-box;padding:12px 14px 14px;overflow:hidden;position:relative}
+#sel h1{margin:0;text-align:center;font-size:20px;letter-spacing:6px;color:#ffe6a8;text-shadow:0 2px 0 #000,0 0 12px rgba(255,200,110,.35);font-family:"Noto Serif TC","PMingLiU",serif}
+#sel .sub{text-align:center;font-size:11px;color:#a8987a;margin:2px 0 8px;letter-spacing:2px}
+.frame{border:2px solid #7a5a30;border-radius:10px;background:linear-gradient(180deg,rgba(60,42,26,.92),rgba(28,19,12,.92));
+  box-shadow:inset 0 0 0 1px #2a1a0c,inset 0 0 0 3px rgba(255,214,140,.14),0 3px 10px rgba(0,0,0,.6)}
+#stage{position:relative;flex:1 1 150px;min-height:130px;overflow:hidden;--ac:#ffd84a}
+#stage .glow{position:absolute;left:50%;bottom:18px;width:220px;height:90px;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(closest-side,var(--ac),transparent);opacity:.45;filter:blur(6px)}
+#stage .floor{position:absolute;left:50%;bottom:30px;width:150px;height:30px;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,255,255,.18),rgba(0,0,0,0));border:1px solid rgba(255,230,168,.25)}
+#pv{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);height:calc(100% - 10px);aspect-ratio:var(--ar);background-repeat:no-repeat;background-size:100% 100%;background-position:bottom;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6))}
+#nameplate{position:absolute;left:10px;top:8px;right:64px}
+#nameplate .nm{font-size:26px;font-weight:bold;color:#fff3d4;letter-spacing:4px;text-shadow:0 2px 0 #000;font-family:"Noto Serif TC","PMingLiU",serif}
+#nameplate .fam{font-size:11px;color:#c8b690;letter-spacing:2px;margin-top:1px}
+#attr{position:absolute;right:10px;top:10px;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;color:#1a110b;
+  background:radial-gradient(circle at 35% 30%,#fff,var(--ac) 55%,#000 130%);border:2px solid #3a2410;box-shadow:0 0 0 2px #b8924c,0 2px 6px #000;font-family:"Noto Serif TC","PMingLiU",serif}
+#stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0;flex:none}
+#stats div{padding:6px 4px;text-align:center}
+#stats b{display:block;font-size:10px;color:#a8987a;font-weight:normal;letter-spacing:2px}
+#stats span{font-size:14px;color:#ffe6a8;font-weight:bold}
+#info{padding:8px 10px 9px;flex:none;display:flex;flex-direction:column}
+#info .atk{font-size:11px;color:#d8caa8;line-height:1.45;margin-bottom:8px}
+#info .atk em{color:#ffe6a8;font-style:normal;font-weight:bold}
+#skills{display:flex;justify-content:space-between;gap:4px;flex:none}
+.sk{flex:1;min-width:0;text-align:center;cursor:pointer}
+.sk .md{width:38px;height:38px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#fff3d4;text-shadow:0 2px 0 rgba(0,0,0,.8);
+  background:radial-gradient(circle at 35% 28%,var(--ac) 0%,#3a2814 85%);border:2px solid #4a3018;box-shadow:0 0 0 2px #8a6a38,0 2px 5px #000;font-family:"Noto Serif TC","PMingLiU",serif;transition:transform .12s}
+.sk .md i{display:flex;font-style:normal;align-items:center;justify-content:center}
+.ic{width:27px;height:27px;fill:#fff3d4;stroke:rgba(30,14,4,.7);stroke-width:1.1;stroke-linejoin:round;paint-order:stroke;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}
+.ic .l{fill:none;stroke:#fff3d4;stroke-width:2.4;stroke-linecap:round}.ic .w{stroke:#fff;stroke-width:1.6;opacity:.85}.ic .d{stroke:#2a1a0c;stroke-width:1.6;opacity:.8}
+.sk .t{font-size:10px;color:#a8987a;margin-top:4px;letter-spacing:1px}
+.sk .n{font-size:10px;color:#f1e6d2;margin-top:1px;white-space:nowrap}
+.sk.on .md{box-shadow:0 0 0 2px #ffe6a8,0 0 12px var(--ac),0 2px 5px #000;transform:scale(1.1)}
+.sk.ult .md{border-radius:12px;transform:rotate(45deg)}.sk.ult .md i{transform:rotate(-45deg)}
+.sk.ult.on .md{transform:rotate(45deg) scale(1.1)}
+#desc{margin-top:8px;padding:7px 9px;font-size:12px;line-height:1.5;color:#e8dcc0;height:66px;overflow:auto;background:rgba(0,0,0,.28);border-radius:6px;border:1px solid rgba(255,214,140,.15)}
+#desc b{color:#ffe6a8}
+#cards{display:flex;gap:8px;margin:8px 0;flex:none}
+.card{flex:1;height:74px;position:relative;cursor:pointer;overflow:hidden;--ac:#ffd84a;transition:transform .12s}
+.card .im{position:absolute;left:50%;bottom:14px;width:42px;height:63px;margin-left:-21px;background-size:100% 100%;image-rendering:pixelated;transform:scaleX(-1);filter:brightness(.55) saturate(.7)}
+.card .cn{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:12px;color:#a8987a;letter-spacing:2px}
+.card.on{border-color:var(--ac);box-shadow:inset 0 0 0 1px #2a1a0c,0 0 12px var(--ac),0 3px 10px rgba(0,0,0,.6);transform:translateY(-3px)}
+.card.on .im{filter:none}.card.on .cn{color:#fff3d4;font-weight:bold}
+#go,#sgo{flex:none;height:54px;line-height:50px;text-align:center;border:2px solid #f6d27a;border-radius:10px;cursor:pointer;font-size:20px;font-weight:bold;letter-spacing:10px;color:#2a1604;text-indent:10px;
+  background:linear-gradient(180deg,#ffe29a 0%,#e0a63c 55%,#b27a22 100%);box-shadow:0 0 0 2px #5a3a12,0 4px 10px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.6);font-family:"Noto Serif TC","PMingLiU",serif}
+#go:active,#sgo:active{transform:translateY(2px);filter:brightness(.92)}
+
+/* ---------- 選關畫面（11-21）---------- */
+#stg{position:fixed;inset:0;z-index:11;display:none;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;color:#f1e6d2;
+  background:radial-gradient(120% 70% at 50% 18%,#3a2a1c 0%,#1a110b 55%,#0c0806 100%)}
+#stg .wrap{width:min(390px,100vw);height:100dvh;margin:0 auto;display:flex;flex-direction:column;box-sizing:border-box;padding:12px 14px 14px;overflow:hidden;position:relative}
+#stg h1{margin:0;text-align:center;font-size:20px;letter-spacing:6px;color:#ffe6a8;text-shadow:0 2px 0 #000,0 0 12px rgba(255,200,110,.35);font-family:"Noto Serif TC","PMingLiU",serif}
+#stg .sub{text-align:center;font-size:11px;color:#a8987a;margin:2px 0 8px;letter-spacing:2px}
+#sbar{display:flex;align-items:center;gap:10px;padding:8px 10px;flex:none}
+#sbar .im{width:44px;height:66px;background-size:100% 100%;image-rendering:pixelated;transform:scaleX(-1);flex:none}
+#sbar .mid{flex:1;min-width:0}
+#sbar .nm{font-size:16px;font-weight:bold;color:#fff3d4;letter-spacing:2px;font-family:"Noto Serif TC","PMingLiU",serif}
+#sbar .xp{height:9px;background:rgba(0,0,0,.55);border-radius:5px;margin-top:5px;overflow:hidden;border:1px solid #4a3018}
+#sbar .xp i{display:block;height:100%;background:linear-gradient(180deg,#6fd07f,#2f7f3f)}
+#sbar .xt{font-size:10px;color:#a8987a;margin-top:3px}
+#sbar .gold{text-align:right;font-size:11px;color:#a8987a;flex:none}#sbar .gold b{display:block;font-size:16px;color:#ffe27a}
+#nodes{flex:1;min-height:0;overflow-y:auto;margin:8px 0;padding:2px;display:flex;flex-direction:column;gap:7px}
+.nd{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;flex:none;position:relative}
+.nd .no{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;color:#fff3d4;flex:none;
+  background:radial-gradient(circle at 35% 28%,#c89a52 0%,#3a2814 85%);border:2px solid #4a3018;box-shadow:0 0 0 2px #8a6a38,0 2px 5px #000;font-family:"Noto Serif TC","PMingLiU",serif}
+.nd .mid{flex:1;min-width:0}.nd .n{font-size:14px;color:#fff3d4;font-weight:bold;letter-spacing:1px}.nd .d{font-size:11px;color:#a8987a;margin-top:2px}
+.nd .st{font-size:11px;flex:none;text-align:right;color:#a8987a}.nd .st b{display:block;font-size:15px}
+.nd.clear .st b{color:#8fe0a0}.nd.open .st b{color:#ffe6a8}
+.nd.lock{opacity:.45;cursor:default}.nd.lock .no{background:radial-gradient(circle at 35% 28%,#666 0%,#222 85%)}
+.nd.sel{border-color:#ffe6a8;box-shadow:inset 0 0 0 1px #2a1a0c,0 0 12px rgba(255,214,140,.55),0 3px 10px rgba(0,0,0,.6)}
+#sbtn{display:flex;gap:8px;flex:none}
+#sback{width:92px;height:54px;line-height:50px;text-align:center;border:2px solid #7a5a30;border-radius:10px;cursor:pointer;font-size:14px;color:#e8dcc0;background:linear-gradient(180deg,#4a3420,#241710);letter-spacing:2px;box-shadow:0 3px 8px rgba(0,0,0,.6)}
+#sgo{flex:1}
+
+/* ---------- 世界地圖（P2）---------- */
+#wmap{position:fixed;inset:0;z-index:13;display:none;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;color:#f1e6d2;background:#0c0806}
+#wmap .wrap{width:min(390px,100vw);height:100dvh;margin:0 auto;display:flex;flex-direction:column;box-sizing:border-box;padding:10px 10px 12px;overflow:hidden;position:relative;background:linear-gradient(180deg,rgba(18,12,27,.98),rgba(10,8,12,.98))}
+#wmap h1{margin:0;text-align:center;font-size:20px;letter-spacing:6px;color:#ffe6a8;text-shadow:0 2px 0 #000,0 0 12px rgba(255,200,110,.35);font-family:"Noto Serif TC","PMingLiU",serif}
+#wmap .sub{text-align:center;font-size:10px;color:#a8987a;margin:1px 0 6px;letter-spacing:2px}
+#wmap .mapbar{display:flex;align-items:center;gap:8px;padding:5px 8px;flex:none;min-height:42px}
+#wmap .mapbar .im{width:30px;height:42px;background-size:100% 100%;image-rendering:pixelated;transform:scaleX(-1);flex:none}
+#wmap .mapbar .mid{flex:1;min-width:0}.mapbar .nm{font-size:14px;font-weight:bold;color:#fff3d4;letter-spacing:2px;font-family:"Noto Serif TC","PMingLiU",serif}
+#wmap .mapbar .xt{font-size:10px;color:#a8987a;margin-top:2px}.mapbar .gold{text-align:right;font-size:10px;color:#a8987a}.mapbar .gold b{display:block;font-size:14px;color:#ffe27a}
+#mapview{position:relative;flex:1;min-height:0;overflow:auto;margin:6px 0;border:2px solid #7a5a30;border-radius:10px;background:#221936;box-shadow:inset 0 0 0 1px #2a1a0c,0 3px 10px rgba(0,0,0,.6);touch-action:pan-x pan-y;overscroll-behavior:contain}
+#mapart{position:relative;height:100%;width:auto;min-width:100%;aspect-ratio:2/3;flex:none;background:url(../game/assets/world_map.webp) center top/100% 100% no-repeat}
+.mapnode{position:absolute;width:38px;height:38px;margin:-19px 0 0 -19px;padding:0;border:0;background:transparent;cursor:pointer;z-index:2;color:#fff3d4}
+.mapnode .badge{display:flex;align-items:center;justify-content:center;width:32px;height:32px;margin:3px;border-radius:50%;font-size:12px;font-weight:bold;color:#291b08;background:radial-gradient(circle at 35% 25%,#fff7bf 0%,var(--ac) 48%,#9b5b1a 100%);border:2px solid #ffe6a8;box-shadow:0 0 0 2px #65421a,0 0 13px var(--ac),0 2px 5px #000;animation:mapbreath 2.1s ease-in-out infinite;font-family:"Noto Serif TC","PMingLiU",serif}
+.mapnode.lock{cursor:default}.mapnode.lock .badge{background:radial-gradient(circle at 35% 25%,#a8a8a8 0%,#555 52%,#202020 100%);border-color:#aaa;box-shadow:0 0 0 2px #333,0 2px 5px #000;animation:none;opacity:.9}
+.mapnode .label{position:absolute;left:auto;right:34px;top:-2px;width:110px;box-sizing:border-box;padding:4px 7px;text-align:left;line-height:1.2;border:1px solid #9b7740;border-radius:5px;background:rgba(25,15,24,.94);color:#ffe6a8;font-size:10px;white-space:normal;overflow-wrap:anywhere;box-shadow:0 2px 5px #000}
+.mapnode.left .label{left:34px;right:auto;text-align:left}.mapnode.lock .label{color:#b9b1a0;border-color:#665d55}.mapnode .lockicon{width:14px;height:14px;fill:#ded8cc;stroke:#251b18;stroke-width:1.5}.mapnode .clear{position:absolute;right:-9px;bottom:-4px;padding:1px 4px;border:1px solid #d8ed9b;border-radius:8px;background:#31552d;color:#eaffb8;font-size:9px;white-space:nowrap}
+@keyframes mapbreath{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.08);filter:brightness(1.2)}}
+#mapbtn{display:flex;gap:8px;flex:none}.mapback{width:128px;height:42px;line-height:38px;text-align:center;border:2px solid #7a5a30;border-radius:9px;cursor:pointer;font-size:13px;color:#e8dcc0;background:linear-gradient(180deg,#4a3420,#241710);letter-spacing:1px;box-shadow:0 3px 8px rgba(0,0,0,.6)}
+#map-toast{position:absolute;left:50%;bottom:68px;transform:translateX(-50%);display:none;padding:7px 12px;border:1px solid #b8924c;border-radius:7px;background:#241710;color:#ffe6a8;font-size:12px;z-index:4;white-space:nowrap}
+
+/* ---------- 標題畫面（11-21）---------- */
+#ttl{position:fixed;inset:0;z-index:12;display:none;cursor:pointer;font-family:"Microsoft JhengHei","PingFang TC",sans-serif;background:#0c0806;overflow:hidden}
+#ttl .wrap{width:min(390px,100vw);height:100dvh;margin:0 auto;position:relative;overflow:hidden;
+  background:url(../game/assets/bg_water.webp) center/cover no-repeat}
+#ttl .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,10,.55) 0%,rgba(5,3,10,.05) 35%,rgba(5,3,10,.15) 60%,rgba(5,3,10,.85) 100%)}
+#ttl .logo{position:absolute;left:0;right:0;top:15%;text-align:center}
+#ttl .logo .s{font-size:13px;letter-spacing:8px;color:#cfe8ff;text-shadow:0 2px 6px #000;margin-bottom:8px}
+#ttl .logo h1{margin:0;font-size:46px;letter-spacing:10px;text-indent:10px;color:#ffe6a8;font-family:"Noto Serif TC","PMingLiU",serif;
+  background:linear-gradient(180deg,#fff6d8 0%,#ffd77a 45%,#c8892c 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 3px 0 #3a2008) drop-shadow(0 0 14px rgba(255,200,110,.55))}
+#ttl .logo .line{width:220px;height:2px;margin:12px auto 0;background:linear-gradient(90deg,transparent,#f2cf86,transparent)}
+#ttl .heroes{position:absolute;left:0;right:0;bottom:118px;height:44%}
+#ttl .heroes div{position:absolute;bottom:0;background-size:100% 100%;background-repeat:no-repeat;filter:drop-shadow(0 6px 10px rgba(0,0,0,.7))}
+#ttl .tap{position:absolute;left:0;right:0;bottom:62px;text-align:center;font-size:16px;letter-spacing:6px;color:#fff3d4;text-shadow:0 2px 4px #000,0 0 10px rgba(255,214,140,.6);animation:tblink 1.6s ease-in-out infinite}
+@keyframes tblink{0%,100%{opacity:1}50%{opacity:.25}}
+#ttl .ver{position:absolute;right:12px;bottom:14px;font-size:10px;color:rgba(255,255,255,.45);letter-spacing:1px}
+
+/* ---------- 設定 ---------- */
+.gear{position:absolute;right:12px;top:12px;width:40px;height:40px;padding:0;border:2px solid #b8924c;border-radius:9px;cursor:pointer;background:linear-gradient(180deg,#4a3420,#241710);box-shadow:0 2px 6px #000,inset 0 0 0 1px rgba(255,230,168,.18);z-index:3}
+.gear svg{width:24px;height:24px;fill:#ffe6a8;filter:drop-shadow(0 1px 1px #000)}
+#settings{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(5,3,2,.78);font-family:"Microsoft JhengHei","PingFang TC",sans-serif;color:#f1e6d2;padding:16px;box-sizing:border-box;overflow:auto}
+#settings .panel{width:min(360px,100%);max-height:calc(100dvh - 32px);overflow:auto;margin:auto;padding:16px 14px 14px;box-sizing:border-box}
+#settings h2{margin:0 0 12px;text-align:center;font:22px "Noto Serif TC","PMingLiU",serif;letter-spacing:5px;color:#ffe6a8}
+.setting{padding:10px 2px;border-top:1px solid rgba(255,214,140,.15)}
+.setting .row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;color:#fff3d4}
+.setting small{display:block;margin-top:4px;color:#a8987a;font-size:10px;line-height:1.4}
+.switch{width:66px;height:30px;padding:2px;border:1px solid #7a5a30;border-radius:16px;background:#241710;cursor:pointer;transition:background .15s,box-shadow .15s;box-sizing:border-box}
+.switch i{display:block;width:24px;height:24px;border-radius:50%;background:#806b4c;transition:transform .15s,background .15s;box-shadow:0 1px 3px #000}
+.switch.on{background:#a87020;box-shadow:0 0 8px rgba(255,210,100,.45)}.switch.on i{transform:translateX(34px);background:#ffe6a8}
+.seg{display:flex;gap:4px}.seg button,.settings-btn{border:1px solid #7a5a30;border-radius:6px;background:#241710;color:#c8b690;padding:6px 12px;cursor:pointer}.seg button.on{background:#b27a22;color:#fff3d4;border-color:#ffe6a8}
+#clear-save{width:100%;margin-top:12px;border-color:#9b4a3c;background:linear-gradient(180deg,#7a3028,#3a1714);color:#ffe0d8}
+#settings-done{width:100%;margin-top:10px}
+#settings-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:none;padding:8px 14px;border:1px solid #b8924c;border-radius:7px;background:#241710;color:#ffe6a8;z-index:35}
+#settings-confirm{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:36;padding:20px;box-sizing:border-box}
+#settings-confirm .confirm{width:min(330px,100%);padding:16px}.confirm p{font-size:13px;line-height:1.6;color:#f1e6d2}.confirm .actions{display:flex;gap:8px}.confirm button{flex:1;height:40px;border:1px solid #7a5a30;border-radius:7px;background:#241710;color:#fff3d4}.confirm #confirm-clear{background:#7a3028;border-color:#b96b55}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="ttl"><div class="wrap"><div class="shade"></div>
+  <button class="gear" id="ttl-settings" aria-label="設定"><svg viewBox="0 0 24 24"><path d="M9.7 2h4.6l.6 2.2 1.7.7 2-1.1 3.2 3.2-1.1 2 .7 1.7L24 9.3v4.6l-2.2.6-.7 1.7 1.1 2-3.2 3.2-2-1.1-1.7.7-.6 2.2H9.7l-.6-2.2-1.7-.7-2 1.1-3.2-3.2 1.1-2-.7-1.7L0 13.9V9.3l2.2-.6.7-1.7-1.1-2L5 1.8l2 1.1 1.7-.7L9.7 2Zm2.3 6a3.6 3.6 0 1 0 0 7.2A3.6 3.6 0 0 0 12 8Z"/></svg></button>
+  <div class="logo"><div class="s">LEGEND OF THE CHOSEN</div><h1>天選者傳說</h1><div class="line"></div></div>
+  <div class="heroes"><div id="t_sere"></div><div id="t_oz"></div><div id="t_zane"></div></div>
+  <div class="tap">點擊畫面開始</div><div class="ver">原型測試版</div>
+</div></div>
+<div id="sel"><div class="wrap">
+  <h1>天選者傳說</h1><div class="sub">選擇你的出戰角色</div>
+  <div id="stage" class="frame"><div class="glow"></div><div class="floor"></div><div id="pv"></div>
+    <div id="nameplate"><div class="nm" id="nm"></div><div class="fam" id="fam"></div></div><div id="attr"></div></div>
+  <div id="stats"><div class="frame"><b>武器</b><span id="st_w"></span></div><div class="frame"><b>射程</b><span id="st_r"></span></div><div class="frame"><b>血量</b><span id="st_h"></span></div></div>
+  <div id="info" class="frame"><div class="atk" id="atk"></div><div id="skills"></div><div id="desc"></div></div>
+  <div id="cards"></div>
+  <div id="go">出　擊</div>
+</div></div>
+<div id="stg"><div class="wrap">
+  <button class="gear" id="stg-settings" aria-label="設定"><svg viewBox="0 0 24 24"><path d="M9.7 2h4.6l.6 2.2 1.7.7 2-1.1 3.2 3.2-1.1 2 .7 1.7L24 9.3v4.6l-2.2.6-.7 1.7 1.1 2-3.2 3.2-2-1.1-1.7.7-.6 2.2H9.7l-.6-2.2-1.7-.7-2 1.1-3.2-3.2 1.1-2-.7-1.7L0 13.9V9.3l2.2-.6.7-1.7-1.1-2L5 1.8l2 1.1 1.7-.7L9.7 2Zm2.3 6a3.6 3.6 0 1 0 0 7.2A3.6 3.6 0 0 0 12 8Z"/></svg></button>
+  <h1>第 1 章</h1><div class="sub">選擇要挑戰的關卡</div>
+  <div id="sbar" class="frame"><div class="im" id="s_im"></div><div class="mid"><div class="nm" id="s_nm"></div><div class="xp"><i id="s_xp"></i></div><div class="xt" id="s_xt"></div></div><div class="gold">金幣<b id="s_gold"></b></div></div>
+  <div id="nodes"></div>
+  <div id="sbtn"><div id="sback">‹ 換角色</div><div id="sgo">開　戰</div></div>
+</div></div>
+<div id="wmap"><div class="wrap">
+  <button class="gear" id="map-settings" aria-label="設定"><svg viewBox="0 0 24 24"><path d="M9.7 2h4.6l.6 2.2 1.7.7 2-1.1 3.2 3.2-1.1 2 .7 1.7L24 9.3v4.6l-2.2.6-.7 1.7 1.1 2-3.2 3.2-2-1.1-1.7.7-.6 2.2H9.7l-.6-2.2-1.7-.7-3.2 1.1-3.2-3.2 1.1-2-.7-1.7L0 13.9V9.3l2.2-.6.7-1.7-1.1-2L5 1.8l2 1.1 1.7-.7L9.7 2Zm2.3 6a3.6 3.6 0 1 0 0 7.2A3.6 3.6 0 0 0 12 8Z"/></svg></button>
+  <h1>世界地圖</h1><div class="sub">沿著命運之路，探索九大地界</div>
+  <div id="mapbar" class="mapbar frame"><div class="im" id="m_im"></div><div class="mid"><div class="nm" id="m_nm"></div><div class="xt" id="m_xt"></div></div><div class="gold">金幣<b id="m_gold"></b></div></div>
+  <div id="mapview"><div id="mapart"></div><div id="map-toast">尚未開放</div></div>
+  <div id="mapbtn"><div class="mapback" id="mapback">‹ 換角色</div></div>
+</div></div>
+<div id="settings"><div class="panel frame">
+  <h2>設定</h2>
+  <div class="setting"><div class="row"><span>畫面清晰度</span><div class="seg"><button id="set-hd">高</button><button id="set-sd">標準</button></div></div><small>高：較清楚；標準：較省電、較流暢</small></div>
+  <div class="setting"><div class="row"><span>畫面震動</span><button class="switch" id="set-shake" aria-label="畫面震動"><i></i></button></div></div>
+  <div class="setting"><div class="row"><span>傷害數字</span><button class="switch" id="set-dmg" aria-label="傷害數字"><i></i></button></div></div>
+  <div class="setting"><div class="row"><span>自動戰鬥預設</span><button class="switch" id="set-auto" aria-label="自動戰鬥預設"><i></i></button></div><small>開戰時 AUTO 自動開啟</small></div>
+  <button class="settings-btn" id="clear-save">清除存檔</button><button class="settings-btn" id="settings-done">完成</button>
+</div></div>
+<div id="settings-confirm"><div class="confirm frame"><p>確定要清除所有存檔嗎？角色等級、經驗、金幣與通關紀錄都會歸零，無法復原。</p><div class="actions"><button id="cancel-clear">取消</button><button id="confirm-clear">確定清除</button></div></div></div>
+<div id="settings-toast">存檔已清除</div>
+<script src="progress.js"></script>
+<script src="tutorial_text.js"></script>
+<script src="select_data.js"></script>
+<script src="icons_select.js"></script>
+<script>
+(function () {
+  var QS = new URLSearchParams(location.search);
+  function startGame() {
+    // 每次開啟都用時間戳載入，瀏覽器不會用到舊版快取
+    document.write('<script src="../game/lib/phaser.min.js?t=' + Date.now() + '"><\/script>');
+    document.write('<script src="game.js?t=' + Date.now() + '"><\/script>');
+  }
+  // 測試／模擬用網址（指定角色、自動戰鬥、模擬）直接進戰鬥，不顯示選角
+  if (!QS.get('map') && (QS.get('hero') || QS.get('team') || QS.get('auto') || QS.get('sim'))) { startGame(); return; }
+  var PICK = QS.get('pick');
+
+  var H = window.SELECT_HEROES, AC = { '雷': '#ffd84a', '水': '#5fb8ff', '土': '#d0a45c', '光': '#fff0a0', '風': '#8fe8b0', '火': '#ff8a5a', '闇': '#b890f0' };
+  var sel = document.getElementById('sel'), $ = function (i) { return document.getElementById(i); };
+  var cur = 0, frame = 1, timer = null, skOn = 0, last = null;
+  try { last = localStorage.getItem('apLastHero'); } catch (e) {}
+  for (var i = 0; i < H.length; i++) if (H[i].id === last) cur = i;
+  var LH = { zane: [672, 971, 0.858], sere: [620, 939, 0.939], oz: [594, 672, 0.749] };   // 第3個＝圖高占舞台高度比例；依「頭頂到腳底」的身高對齊三人（含特效環／法杖的圖高不同）
+  var asset = function (id, n) { return '../game/assets/hd_' + id + '_1_idleA_f' + n + '.png'; };
+  var SLOT = { '一技': '技一', '二技': '技二', '三技': '技三', '必殺': '必殺', '被動': '被動' };
+  function cds(s) { return s.cd && s.cd !== '—' && s.slot !== '必殺' ? s.cd : (s.slot === '必殺' ? '集氣滿' : ''); }
+  function showSkill(k) {
+    var h = H[cur], s = h.skills[k]; skOn = k;
+    var els = $('skills').children; for (var i = 0; i < els.length; i++) els[i].classList.toggle('on', i === k);
+    $('desc').innerHTML = '<b>' + s.name + '</b>　<span style="color:#a8987a">' + SLOT[s.slot] + (cds(s) ? '・' + cds(s) : '') + '</span><br>' + s.content;
+  }
+  function render() {
+    var h = H[cur], ac = AC[h.attr] || '#ffd84a';
+    sel.style.setProperty('--ac', ac); $('stage').style.setProperty('--ac', ac);
+    $('nm').textContent = h.name; $('fam').textContent = h.attr + '屬性・' + h.family;
+    $('attr').textContent = h.attr; $('st_w').textContent = h.weapon; $('st_r').textContent = h.range.replace(/ *\d+px/, ''); $('st_h').textContent = h.hp;
+    $('atk').innerHTML = '<em>普攻</em>　' + h.atk + '（間隔 ' + h.cd + '）';
+    var sk = '';
+    h.skills.forEach(function (s, k) {
+      s.content = s.desc;
+      var ult = s.slot === '必殺';
+      sk += '<div class="sk' + (ult ? ' ult' : '') + '" style="--ac:' + ac + '" data-k="' + k + '"><div class="md"><i>' + ((window.SELECT_ICONS[h.id] || [])[k] || s.name.charAt(0)) + '</i></div><div class="t">' + SLOT[s.slot] + '</div><div class="n">' + s.name + '</div></div>';
+    });
+    $('skills').innerHTML = sk;
+    Array.prototype.forEach.call($('skills').children, function (e) { e.onclick = function () { showSkill(+e.getAttribute('data-k')); }; });
+    showSkill(0);
+    Array.prototype.forEach.call($('cards').children, function (e, i) { e.classList.toggle('on', i === cur); });
+    var d = LH[h.id], pv = $('pv'); pv.style.setProperty('--ar', d[0] + '/' + d[1]); pv.style.height = 'calc((100% - 10px) * ' + d[2] + ')'; pv.style.backgroundImage = 'url(../game/assets/lihui_' + h.id + '.png)';
+  }
+  function refreshLevels() {
+    H.forEach(function (h, i) {
+      var cn = $('cards').children[i] && $('cards').children[i].querySelector('.cn');
+      if (cn) cn.textContent = h.name + '　Lv' + TX.hero(TX.load(), h.id).lv;
+    });
+  }
+  H.forEach(function (h, i) {
+    var c = document.createElement('div'); c.className = 'card frame'; c.style.setProperty('--ac', AC[h.attr] || '#ffd84a');
+    c.innerHTML = '<div class="im" style="background-image:url(' + asset(h.id, 1) + ')"></div><div class="cn">' + h.name + '</div>';
+    c.onclick = function () { cur = i; render(); };
+    $('cards').appendChild(c);
+  });
+  /* ---------- 選關畫面 ---------- */
+  var stg = $('stg'), wmap = $('wmap'), SV = null, selNode = 1;
+  function launch(nodeN, tut) {
+    clearInterval(timer); stg.style.display = 'none'; sel.style.display = 'none'; wmap.style.display = 'none';
+    QS.delete('pick'); QS.delete('map'); QS.set('hero', H[cur].id); QS.set('node', String(nodeN)); QS.set('real', '1');
+    if (tut) QS.set('tut', String(tut)); else QS.delete('tut');
+    history.replaceState(null, '', location.pathname + '?' + QS.toString());
+    var s1 = document.createElement('script'); s1.src = '../game/lib/phaser.min.js?t=' + Date.now();
+    s1.onload = function () { var s2 = document.createElement('script'); s2.src = 'game.js?t=' + Date.now(); document.body.appendChild(s2); };
+    document.body.appendChild(s1);
+  }
+  function showStages(chapterId) {
+    var h = H[cur], hs = TX.hero(SV = TX.load(), h.id), ac = AC[h.attr] || '#ffd84a';
+    refreshLevels();
+    try { localStorage.setItem('apLastHero', h.id); } catch (e) {}
+    sel.style.display = 'none'; wmap.style.display = 'none'; stg.style.display = 'block'; stg.style.setProperty('--ac', ac);
+    $('s_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')';
+    var isPrologue = chapterId === 0;
+    $('stg').querySelector('h1').textContent = isPrologue ? '序章' : '第 1 章';
+    $('stg').querySelector('.sub').textContent = isPrologue ? '燼潮鎮・選擇教學節' : '選擇要挑戰的關卡';
+    $('s_nm').textContent = h.name + '　Lv ' + hs.lv;
+    var need = TX.xpNeed(hs.lv), cap = hs.lv >= TX.LV_CAP;
+    $('s_xp').style.width = (cap ? 100 : Math.min(100, hs.xp / need * 100)) + '%';
+    $('s_xt').textContent = cap ? '已達等級上限' : '經驗 ' + hs.xp + ' / ' + need;
+    $('s_gold').textContent = SV.gold;
+    // 預設選「最前面尚未通關的已開放節」，全通關則選最後一節
+    var maxNode = isPrologue ? 3 : 10;
+    selNode = maxNode; for (var n = 1; n <= maxNode; n++) if ((isPrologue ? TX.prologueUnlocked(SV, n) : TX.unlocked(SV, n)) && !(isPrologue ? SV.prologueCleared.indexOf(n) >= 0 : TX.isCleared(SV, n))) { selNode = n; break; }
+    var box = $('nodes'); box.innerHTML = '';
+    for (var k = 1; k <= maxNode; k++) (function (k) {
+      var un = isPrologue ? TX.prologueUnlocked(SV, k) : TX.unlocked(SV, k), cl = isPrologue ? SV.prologueCleared.indexOf(k) >= 0 : TX.isCleared(SV, k), d = document.createElement('div');
+      d.className = 'nd frame ' + (cl ? 'clear' : un ? 'open' : 'lock'); d.setAttribute('data-n', k);
+      var rec = isPrologue ? 1 : TX.REC_LV[k], name = isPrologue && window.TUT_TEXT ? TUT_TEXT.nodes[k].name : TX.NODE_NAMES[k], enemies = isPrologue ? '教學' : TX.NODE_ENEMIES[k], hint = hs.lv >= rec ? '' : '（等級偏低）';
+      d.innerHTML = '<div class="no">' + k + '</div><div class="mid"><div class="n">' + name + (k === 10 ? '　首領' : '') + '</div><div class="d">推薦 Lv ' + rec + '　敵人 ' + enemies + (un && !cl ? hint : '') + '</div></div><div class="st"><b>' + (cl ? '已通關' : un ? '可挑戰' : '未開放') + '</b></div>';
+      d.onclick = function () { if (!un) return; selNode = k; mark(); };
+      box.appendChild(d);
+    })(k);
+    mark();
+    var sel0 = box.querySelector('.nd.sel'); if (sel0) sel0.scrollIntoView({ block: 'center' });
+  }
+  function showMap() {
+    var h = H[cur], hs = TX.hero(SV = TX.load(), h.id), map = $('mapart');
+    refreshLevels();
+    try { localStorage.setItem('apLastHero', h.id); } catch (e) {}
+    sel.style.display = 'none'; stg.style.display = 'none'; wmap.style.display = 'block';
+    $('m_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')'; $('m_nm').textContent = h.name + '　Lv ' + hs.lv;
+    $('m_xt').textContent = hs.lv >= TX.LV_CAP ? '已達等級上限' : '冒險準備完畢'; $('m_gold').textContent = SV.gold;
+    map.innerHTML = '';
+    TX.CHAPTERS.forEach(function (ch) {
+      var open = TX.chapterOpen(SV, ch.id), cleared = ch.id === 0 ? SV.prologueCleared.length >= 3 : ch.id === 1 && TX.isCleared(SV, 10), d = document.createElement('button');
+      d.className = 'mapnode' + (ch.x > 560 ? '' : ' left') + (open ? ' open' : ' lock');
+      d.style.left = (ch.x / 1024 * 100) + '%'; d.style.top = (ch.y / 1536 * 100) + '%'; d.style.setProperty('--ac', AC[ch.attr] || '#ffd84a');
+      var lock = '<svg class="lockicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h2v11H5V10h2Zm2 0h6V7a3 3 0 0 0-6 0v3Z"/></svg>';
+      d.innerHTML = '<span class="badge">' + (open ? ch.attr : lock) + '</span><span class="label">' + ch.name + (open ? '' : '<br><small>尚未開放</small>') + '</span>' + (cleared ? '<span class="clear">✓ 已通關</span>' : '');
+      d.onclick = function () { if (open) { showStages(ch.id); } else { var t = $('map-toast'); t.style.display = 'block'; clearTimeout(t._timer); t._timer = setTimeout(function () { t.style.display = 'none'; }, 1200); } };
+      map.appendChild(d);
+    });
+    setTimeout(function () {
+      var target = map.querySelector('.mapnode.open'), view = $('mapview');
+      if (target) {
+        view.scrollTop = Math.max(0, target.offsetTop - (view.clientHeight - target.offsetHeight) / 2);
+        view.scrollLeft = Math.max(0, target.offsetLeft - (view.clientWidth - target.offsetWidth) / 2);
+      }
+    }, 0);
+  }
+  function mark() { Array.prototype.forEach.call($('nodes').children, function (e) { e.classList.toggle('sel', +e.getAttribute('data-n') === selNode); }); }
+  $('go').onclick = function () { var s = TX.load(); if (!s.tutorialDone) launch(1, 1); else showMap(); };
+  $('sgo').onclick = function () { launch(selNode, $('stg').querySelector('h1').textContent === '序章' ? selNode : 0); };
+  $('sback').textContent = '‹ 世界地圖';
+  $('sback').onclick = function () { showMap(); };
+  $('mapback').onclick = function () { wmap.style.display = 'none'; stg.style.display = 'none'; sel.style.display = 'block'; render(); };
+  refreshLevels();
+  /* ---------- 設定面板 ---------- */
+  var settings = $('settings'), confirmBox = $('settings-confirm'), toast = $('settings-toast');
+  function syncSettings() {
+    var s = TX.settings();
+    $('set-hd').classList.toggle('on', s.hd); $('set-sd').classList.toggle('on', !s.hd);
+    [['set-shake', s.shake], ['set-dmg', s.dmgNum], ['set-auto', s.auto]].forEach(function (x) { $(x[0]).classList.toggle('on', x[1]); });
+  }
+  function openSettings(e) { if (e) e.stopPropagation(); syncSettings(); settings.style.display = 'flex'; }
+  function closeSettings() { settings.style.display = 'none'; confirmBox.style.display = 'none'; }
+  function updateSetting(k, v) { var s = TX.settings(); s[k] = v; TX.saveSettings(s); syncSettings(); }
+  $('set-hd').onclick = function () { updateSetting('hd', true); }; $('set-sd').onclick = function () { updateSetting('hd', false); };
+  [['set-shake', 'shake'], ['set-dmg', 'dmgNum'], ['set-auto', 'auto']].forEach(function (x) { $(x[0]).onclick = function () { updateSetting(x[1], !TX.settings()[x[1]]); }; });
+  $('settings-done').onclick = closeSettings;
+  $('clear-save').onclick = function () { confirmBox.style.display = 'flex'; };
+  $('cancel-clear').onclick = function () { confirmBox.style.display = 'none'; };
+  $('confirm-clear').onclick = function () {
+    TX.clearSave(); confirmBox.style.display = 'none';
+    if (stg.style.display === 'block') showStages(); else refreshLevels();
+    toast.style.display = 'block'; setTimeout(function () { toast.style.display = 'none'; }, 1400);
+  };
+  $('ttl-settings').onclick = openSettings; $('stg-settings').onclick = openSettings; $('map-settings').onclick = openSettings;
+  // 標題畫面：三人立繪並排（同一比例，腳底對齊）；點擊進選角。從結算「回選關」（?pick=）回來不經過標題
+  function showTitle() {
+    sel.style.display = 'none'; stg.style.display = 'none'; wmap.style.display = 'none';
+    var ttl = $('ttl'), base = 0.68, pos = { sere: [-6], oz: [50], zane: [24] };   // 左瑟蕾、中澤恩（最前）、右歐斯
+    ['sere', 'oz', 'zane'].forEach(function (id) {
+      var d = LH[id], e = $('t_' + id), hPct = base * d[2] / 0.854 * 100;
+      e.style.height = hPct + '%'; e.style.aspectRatio = d[0] + '/' + d[1]; e.style.left = pos[id][0] + '%';
+      e.style.backgroundImage = 'url(../game/assets/lihui_' + id + '.png)';
+    });
+    ttl.style.display = 'block';
+    ttl.onclick = function () { ttl.style.display = 'none'; sel.style.display = 'block'; render(); };
+  }
+  if (!PICK && !QS.get('map')) showTitle(); else { sel.style.display = 'block'; render(); }
+  if (PICK) { for (var q = 0; q < H.length; q++) if (H[q].id === PICK) cur = q; showStages(1); }
+  if (QS.get('map')) { for (var q2 = 0; q2 < H.length; q2++) if (H[q2].id === QS.get('map')) cur = q2; showMap(); }
+})();
+</script>
+</body>
+</html>
