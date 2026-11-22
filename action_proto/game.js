@@ -1154,7 +1154,7 @@
   function banner(s) {
     if (SIM) return;
     const multiline = s.includes('\n');
-    const t = sc.add.text(W / 2, 330, s, { fontSize: multiline ? '24px' : '40px', color: '#ffe6a8', fontStyle: 'bold', stroke: '#2a1408', strokeThickness: multiline ? 4 : 6, align: 'center', wordWrap: { width: W - 32, useAdvancedWrap: true } }).setOrigin(0.5).setDepth(3000).setScrollFactor(0).setAlpha(0);
+    const t = sc.add.text(W / 2, (TUT ? 590 : 330), s, { fontSize: multiline ? '24px' : '40px', color: '#ffe6a8', fontStyle: 'bold', stroke: '#2a1408', strokeThickness: multiline ? 4 : 6, align: 'center', wordWrap: { width: W - 32, useAdvancedWrap: true } }).setOrigin(0.5).setDepth(3000).setScrollFactor(0).setAlpha(0);
     sc.tweens.add({ targets: t, alpha: 1, duration: 200, yoyo: true, hold: 700, onComplete: () => t.destroy() });
   }
   function fxGfx(draw, life) { if (SIM) return; const g = sc.add.graphics().setDepth(900); draw(g); sc.tweens.add({ targets: g, alpha: 0, duration: life, onComplete: () => g.destroy() }); }
@@ -1281,24 +1281,40 @@
     if (REAL) UT(W / 2, py + ph - 14, '放棄不會獲得經驗與金幣', 10, '#8a7a60', 2103).setOrigin(0.5);
     G.pauseObjs = sc.children.list.slice(n0);
   }
+  /* 序章對話框（11-22 修正）：底板整塊均勻上色；立繪取半身（頭到腰）等比例縮放，從框底站到略高出框頂 */
+  const DLG = { y: 240, h: 180, tx: 170 };   // 11-22 jun：角色與戰鬥在畫面下半，對話框移到上半部                         // 大對話框位置、高度、文字起點 x
+  const PORT_CROP = { x: 40, y: 0, w: 380, h: 560 };               // lihui_serloan.png（492×973）裁切範圍：頭到腰、去掉兩側空白
+  function dlgPanel(g, x, y, w, h) {
+    g.clear();
+    g.fillStyle(0x000000, 0.4); g.fillRoundedRect(x + 1, y + 4, w, h, 12);                    // 投影
+    g.fillStyle(0x170e08, 0.96); g.fillRoundedRect(x, y, w, h, 12);                            // 整塊底色
+    g.fillStyle(0x3a2414, 0.5); g.fillRoundedRect(x + 3, y + 3, w - 6, 26, { tl: 10, tr: 10, bl: 0, br: 0 });   // 頂端細亮帶（不再把底板切成上下兩半）
+    g.lineStyle(2, 0x6e4a1c, 1); g.strokeRoundedRect(x, y, w, h, 12);
+    g.lineStyle(1.5, 0xd9ad5c, 0.9); g.strokeRoundedRect(x + 3, y + 3, w - 6, h - 6, 10);
+  }
+  function placePortrait(img, left, bottom, height) {   // 依裁切範圍等比例縮放，讓半身像的底邊貼齊 bottom
+    if (!img || !img.setCrop || !img.frame) return;
+    const k = height / PORT_CROP.h;
+    img.setScale(k).setPosition(left - PORT_CROP.x * k, bottom - (PORT_CROP.y + PORT_CROP.h) * k);
+  }
   function buildTutorial() {
     const t = G.tut;
     t.objs = [];
     const g = sc.add.graphics().setDepth(2050).setScrollFactor(0);
-    const portrait = sc.textures.exists('serloan_portrait') ? sc.add.image(48, 788, 'serloan_portrait').setDepth(2051).setScrollFactor(0).setOrigin(0.5, 1).setCrop(0, 0, 492, 650).setDisplaySize(75, 150).setVisible(false) : sc.add.zone(48, 788, 1, 1).setDepth(2051).setScrollFactor(0).setVisible(false);
+    const portrait = sc.textures.exists('serloan_portrait') ? sc.add.image(0, 0, 'serloan_portrait').setDepth(2051).setScrollFactor(0).setOrigin(0, 0).setCrop(PORT_CROP.x, PORT_CROP.y, PORT_CROP.w, PORT_CROP.h).setVisible(false) : sc.add.zone(48, 788, 1, 1).setDepth(2051).setScrollFactor(0).setVisible(false);
     const name = UT(92, 650, TUT_TEXT.speaker, 13, '#ffe6a8', 2052, { fontStyle: 'bold' });
     const body = UT(92, 674, '', 14, '#f1e6d2', 2052, { wordWrap: { width: 290, useAdvancedWrap: true }, lineSpacing: 4 });
     const next = UT(337, 806, TUT_TEXT.ui.next, 10, '#d9ad5c', 2052, { fontStyle: 'bold' }).setOrigin(1, 0.5);
-    const z = sc.add.zone(W / 2, 742, W, 190).setInteractive().setDepth(2053).setScrollFactor(0);
+    const z = sc.add.zone(W / 2, 330, W, 200).setInteractive().setDepth(2053).setScrollFactor(0);
     t.objs.push(g, portrait, name, body, next, z); t.body = body; t.next = next; t.portrait = portrait; t.name = name; t.dialogueIndex = 0;
-    const draw = () => { g.clear(); uiPanel(g, 12, 638, W - 24, 192, 12, 0.94); g.lineStyle(2, 0xd9ad5c, 0.85); g.strokeRoundedRect(12, 638, W - 24, 192, 12); };
+    const draw = () => { dlgPanel(g, 12, DLG.y, W - 24, DLG.h); };
     draw();
     const showDialogue = (kind) => {
       const arr = TUT_DATA && TUT_DATA[kind] || [];
       t.dialogue = kind; t.dialogueLines = arr; t.dialogueIndex = 0; t.dialogueOpen = true; G.state = 'tutDialogue';
       t.objs.slice(0, 5).forEach(o => o.setVisible(true)); z.setInteractive();
-      g.clear(); uiPanel(g, 12, 638, W - 24, 192, 12, 0.94); g.lineStyle(2, 0xd9ad5c, 0.85); g.strokeRoundedRect(12, 638, W - 24, 192, 12);
-      portrait.setPosition(48, 788).setDisplaySize(75, 150); name.setPosition(92, 650); body.setPosition(92, 674).setWordWrapWidth(268, true);
+      dlgPanel(g, 12, DLG.y, W - 24, DLG.h);
+      placePortrait(portrait, 18, DLG.y + DLG.h - 3, DLG.h + 22); name.setPosition(DLG.tx, DLG.y + 14); body.setPosition(DLG.tx, DLG.y + 40).setWordWrapWidth(W - 24 - DLG.tx, true); next.setPosition(W - 30, DLG.y + DLG.h - 18);
       sc.tweens.pauseAll(); sc.anims.pauseAll(); body.setText(arr[0] || ''); next.setVisible(true); name.setVisible(true); portrait.setVisible(true);
     };
     t.showDialogue = showDialogue;
@@ -1343,8 +1359,8 @@
     const text = h[t.hint] || '';
     if (!text) { t.objs.slice(0, 5).forEach(o => o.setVisible(false)); return; }
     t.objs.slice(0, 5).forEach(o => o.setVisible(true));
-    t.objs[0].clear(); uiPanel(t.objs[0], 12, 556, 284, 128, 12, 0.94); t.objs[0].lineStyle(2, 0xd9ad5c, 0.85); t.objs[0].strokeRoundedRect(12, 556, 284, 128, 12);   // 寬只到 x=296，不蓋右側技能鈕
-    t.portrait.setPosition(42, 674).setDisplaySize(44, 88).setVisible(true); t.name.setPosition(72, 568).setVisible(true); t.body.setPosition(72, 590).setWordWrapWidth(212, true).setText(text).setVisible(true); t.next.setVisible(false); t.objs[5].disableInteractive();
+    dlgPanel(t.objs[0], 12, 240, W - 24, 118);   // 放上半部（下半是角色與戰鬥）   // 寬只到 x=296，不蓋右側技能鈕
+    placePortrait(t.portrait, 16, 355, 136); t.portrait.setVisible(true); t.name.setPosition(118, 252).setVisible(true); t.body.setPosition(118, 276).setWordWrapWidth(W - 24 - 118, true).setText(text).setVisible(true); t.next.setVisible(false); t.objs[5].disableInteractive();
   }
   function updateTutorial() {
     if (!TUT || !G.tut || G.state !== 'play') return;
@@ -2128,7 +2144,7 @@
     }
     if (sc.plSp && (act().id === 'zane' || act().id === 'sere' || act().id === 'oz')) sc.plSp.play(win ? act().id + '_win' : act().id + '_lose', true);
     uiSceneBackdrop(2000);
-    const oy = rw ? 124 : 0, pw = 320, ph = 440 + oy, px = W / 2 - pw / 2, py = 178 - oy / 2, g = sc.add.graphics().setDepth(2001).setScrollFactor(0);
+    const oy = rw ? 124 : 0, pw = 340, ph = 440 + oy, px = W / 2 - pw / 2, py = 178 - oy / 2, g = sc.add.graphics().setDepth(2001).setScrollFactor(0);
     uiPanel(g, px, py, pw, ph, 16, 0.97);
     g.lineStyle(1, 0xf2cf86, 0.35); g.strokeRoundedRect(px + 8, py + 8, pw - 16, ph - 16, 11);
     [[px + 10, py + 10], [px + pw - 10, py + 10], [px + 10, py + ph - 10], [px + pw - 10, py + ph - 10]].forEach(([x, y]) => { g.fillStyle(0x000000, 0.7); g.fillCircle(x, y, 3.6); g.fillStyle(0xf2cf86, 1); g.fillCircle(x, y, 2.5); g.fillStyle(0xffffff, 0.8); g.fillCircle(x - 0.7, y - 0.8, 0.9); });
@@ -2167,11 +2183,11 @@
       UT(cx, cy + 27, s.name, 11, '#f1e6d2', 2003, { strokeThickness: 2 }).setOrigin(0.5);
       skillPips(g, cx, cy + 43, G.st[s.id], s.max, false, 3.6);
     });
-    uiButton(W / 2 - 88, py + ph - 42, 160, 56, '再玩一次', () => location.reload(), { depth: 2003 });
-    if (REAL && TUT && win && TUT < 3) uiButton(W / 2 + 88, py + ph - 42, 160, 56, TUT_TEXT.ui.nextNode, () => { location.search = '?hero=' + HERO_ID + '&tut=' + (TUT + 1) + '&real=1'; }, { depth: 2003 });
-    else if (REAL && TUT === 3 && win) uiButton(W / 2 + 88, py + ph - 42, 160, 56, TUT_TEXT.ui.toMap, () => { location.search = '?map=' + HERO_ID; }, { depth: 2003 });
-    else if (REAL) uiButton(W / 2 + 88, py + ph - 42, 160, 56, '回選關', () => { location.search = '?pick=' + HERO_ID; }, { depth: 2003 });
-    else uiButton(W / 2 + 88, py + ph - 42, 160, 56, '換角色', () => { const q = new URLSearchParams(location.search); q.delete('hero'); q.delete('team'); location.search = q.toString(); }, { depth: 2003 });
+    uiButton(W / 2 - 80, py + ph - 42, 150, 56, '再玩一次', () => location.reload(), { depth: 2003, fs: 18 });
+    if (REAL && TUT && win && TUT < 3) uiButton(W / 2 + 80, py + ph - 42, 150, 56, TUT_TEXT.ui.nextNode, () => { location.search = '?hero=' + HERO_ID + '&tut=' + (TUT + 1) + '&real=1'; }, { depth: 2003, fs: 18 });
+    else if (REAL && TUT === 3 && win) uiButton(W / 2 + 80, py + ph - 42, 150, 56, TUT_TEXT.ui.toMap, () => { location.search = '?map=' + HERO_ID; }, { depth: 2003, fs: 18 });
+    else if (REAL) uiButton(W / 2 + 80, py + ph - 42, 150, 56, '回選關', () => { location.search = '?pick=' + HERO_ID; }, { depth: 2003, fs: 18 });
+    else uiButton(W / 2 + 80, py + ph - 42, 150, 56, '換角色', () => { const q = new URLSearchParams(location.search); q.delete('hero'); q.delete('team'); location.search = q.toString(); }, { depth: 2003, fs: 18 });
   }
 
   /* ---------- 測試用 ---------- */
