@@ -334,7 +334,7 @@ setTimeout(function () { box.style.display = 'none';
   function launch(nodeN, tut, chapterId) {
     clearInterval(timer); stg.style.display = 'none'; sel.style.display = 'none'; wmap.style.display = 'none';
     QS.delete('pick'); QS.delete('map'); QS.set('hero', H[cur].id); QS.set('node', String(nodeN)); QS.set('real', '1');
-    if (chapterId === 2) QS.set('ch', '2'); else QS.delete('ch');
+    if (chapterId >= 2) QS.set('ch', String(chapterId)); else QS.delete('ch');
     if (tut) QS.set('tut', String(tut)); else QS.delete('tut');
     history.replaceState(null, '', location.pathname + '?' + QS.toString());
     window.__showLoading && window.__showLoading();
@@ -343,7 +343,7 @@ setTimeout(function () { box.style.display = 'none';
     document.body.appendChild(s1);
   }
   function showStages(chapterId, keepSelection, keepScrollTop) {
-    chapterId = chapterId === 2 ? 2 : (chapterId === 0 ? 0 : 1); activeChapter = chapterId;
+    chapterId = chapterId === 3 ? 3 : (chapterId === 2 ? 2 : (chapterId === 0 ? 0 : 1)); activeChapter = chapterId;
     var h = H[cur], hs = TX.hero(SV = TX.load(), h.id), ac = AC[h.attr] || '#ffd84a';
     var data = TX.chData(chapterId), isPrologue = chapterId === 0;
     refreshLevels();
@@ -351,7 +351,7 @@ setTimeout(function () { box.style.display = 'none';
     sel.style.display = 'none'; wmap.style.display = 'none'; stg.style.display = 'block'; stg.style.setProperty('--ac', ac);
     $('s_im').style.backgroundImage = 'url(' + asset(h.id, 1) + ')'; sprFit($('s_im'), h.id, 58);
     $('stg').querySelector('h1').textContent = isPrologue ? '序章' : data.name;
-    $('stg').querySelector('.sub').textContent = isPrologue ? '燼潮鎮・選擇教學節' : (chapterId === 2 ? '赤脈熔原' : '選擇要挑戰的關卡');
+    $('stg').querySelector('.sub').textContent = isPrologue ? '燼潮鎮・選擇教學節' : (chapterId === 2 ? '赤脈熔原' : (chapterId === 3 ? '浮穹林海' : '選擇要挑戰的關卡'));
     $('s_nm').textContent = h.name + '　Lv ' + hs.lv;
     var need = TX.xpNeed(hs.lv), cap = hs.lv >= TX.LV_CAP;
     $('s_xp').style.width = (cap ? 100 : Math.min(100, hs.xp / need * 100)) + '%';
@@ -382,7 +382,7 @@ setTimeout(function () { box.style.display = 'none';
     $('m_xt').textContent = hs.lv >= TX.LV_CAP ? '已達等級上限' : '冒險準備完畢'; $('m_gold').textContent = SV.gold;
     map.innerHTML = '';
     TX.CHAPTERS.forEach(function (ch) {
-      var open = TX.chapterOpen(SV, ch.id), cleared = ch.id === 0 ? SV.prologueCleared.length >= 3 : (ch.id === 1 || ch.id === 2) && TX.isCleared(SV, 10, ch.id), d = document.createElement('button');
+      var open = TX.chapterOpen(SV, ch.id), cleared = ch.id === 0 ? SV.prologueCleared.length >= 3 : ch.id >= 1 && TX.isCleared(SV, 10, ch.id), d = document.createElement('button');
       d.className = 'mapnode' + (ch.x > 560 ? '' : ' left') + (open ? ' open' : ' lock');
       d.style.left = (ch.x / 1024 * 100) + '%'; d.style.top = (ch.y / 1536 * 100) + '%'; d.style.setProperty('--ac', AC[ch.attr] || '#ffd84a');
       var lock = '<svg class="lockicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h2v11H5V10h2Zm2 0h6V7a3 3 0 0 0-6 0v3Z"/></svg>';
@@ -442,7 +442,7 @@ setTimeout(function () { box.style.display = 'none';
     ttl.onclick = function () { ttl.style.display = 'none'; sel.style.display = 'block'; render(); };
   }
   if (!PICK && !QS.get('map')) showTitle(); else { sel.style.display = 'block'; render(); }
-  if (PICK) { for (var q = 0; q < H.length; q++) if (H[q].id === PICK) cur = q; showStages(QS.get('ch') === '2' ? 2 : 1); }
+  if (PICK) { for (var q = 0; q < H.length; q++) if (H[q].id === PICK) cur = q; showStages(QS.get('ch') === '3' ? 3 : (QS.get('ch') === '2' ? 2 : 1)); }
   if (QS.get('map')) { for (var q2 = 0; q2 < H.length; q2++) if (H[q2].id === QS.get('map')) cur = q2; showMap(); }
 })();
 </script>

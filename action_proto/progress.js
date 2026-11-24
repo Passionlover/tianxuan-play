@@ -17,7 +17,7 @@
     NODE_NAMES: ['', '潮汐渡口', '貝殼灘', '鏡面淺灣', '水晶林徑', '深潮迴廊', '古燈塔遺跡', '瀑布階台', '水晶洞口', '鏡之大廳', '聖窟深處'],
     NODE_ENEMIES: [0, 19, 19, 21, 27, 32, 35, 45, 55, 63, '首領'],
     REC_LV: [0, 1, 1, 2, 3, 5, 6, 8, 10, 12, 14],                      // 每節推薦等級＝首次一路打過來到達該節時的等級（敵人係數依此換算，讓推薦等級的玩家維持調好的難度）
-    XP_OF: { tide: 12, mage: 18, fin: 16, rare: 150, boss: 400, green: 12, red: 16, blue: 18, lavaslime: 16, obsidian: 28, whitepriest: 22, lavarare: 250, magmaking: 700 },   // 每隻敵人經驗（第 1 章首次全通關約 Lv15）
+    XP_OF: { tide: 12, mage: 18, fin: 16, rare: 150, boss: 400, green: 12, red: 16, blue: 18, lavaslime: 16, obsidian: 28, whitepriest: 22, lavarare: 250, magmaking: 700, windfinch: 24, vinetreant: 52, featherarcher: 40, windrare: 350, windeagle: 1000 },   // 每隻敵人經驗（第 1 章首次全通關約 Lv15）
     GOLD_PER_ENEMY: 2, FIRST_CLEAR_GOLD: 100,                           // 金幣：每隻 2；首次通關每節額外 100×節數（目前只累積，不能花）
     LOSE_XP_RATE: 0.5,                                                  // 失敗保留 50% 經驗、不給金幣
     xpNeed: function (L) { return L < 30 ? 220 + 18 * L : 1400 + 50 * (L - 30); },   // 升到下一級所需經驗（沿用舊曲線，上限 50）
@@ -29,6 +29,7 @@
       if (typeof s.gold !== 'number') s.gold = 0;
       if (!Array.isArray(s.cleared)) s.cleared = [];
       if (!Array.isArray(s.cleared2)) s.cleared2 = [];
+      if (!Array.isArray(s.cleared3)) s.cleared3 = [];
       if (typeof s.tutorialDone !== 'boolean') s.tutorialDone = false;
       if (!Array.isArray(s.prologueCleared)) s.prologueCleared = [];
       if (!s.heroes || typeof s.heroes !== 'object') s.heroes = {};
@@ -50,17 +51,19 @@
       return h;
     },
     unlocked: function (s, n, ch) {
-      if (ch === 2) return n === 1 ? s.cleared.indexOf(10) >= 0 : s.cleared2.indexOf(n - 1) >= 0;
+      ch = ch || 1;
+      var data = TX.CHAPTER_DATA[ch], prev = TX.CHAPTER_DATA[ch - 1];
+      if (data && ch >= 2 && prev) return n === 1 ? s[prev.key].indexOf(10) >= 0 : s[data.key].indexOf(n - 1) >= 0;
       return n === 1 || s.cleared.indexOf(n - 1) >= 0;
     },
     prologueUnlocked: function (s, n) { return n === 1 || s.prologueCleared.indexOf(n - 1) >= 0; },
     chapterOpen: function (s, id) {
       if (id === 0) return !!s.tutorialDone;
       if (id === 1) return true;
-      if (id === 2) return !!s.tutorialDone && TX.isCleared(s, 10, 1);
+      if (id >= 2 && TX.CHAPTER_DATA[id]) return !!s.tutorialDone && TX.isCleared(s, 10, id - 1);   // 只對已有資料的章節（11-22 驗收修正：Codex 原寫法讓第5～8章在第1章通關後就開放）
       return !!(TX.CHAPTERS[id] && TX.CHAPTERS[id].open);
     },
-    isCleared: function (s, n, ch) { return (ch === 2 ? s.cleared2 : s.cleared).indexOf(n) >= 0; },
+    isCleared: function (s, n, ch) { var data = TX.CHAPTER_DATA[ch == null ? 1 : ch]; return !!data && (s[data.key] || []).indexOf(n) >= 0; },   // 沒有資料的章節一律未通關（11-22 驗收修正：原寫法讓第4～終章顯示「已通關」）
     // 加經驗並處理升級；回傳 { from, to, gained }
     addXp: function (h, xp) {
       var from = h.lv; h.xp += xp;
@@ -71,7 +74,8 @@
   };
   TX.CHAPTER_DATA = {
     1: { name: '第 1 章', names: TX.NODE_NAMES, enemies: TX.NODE_ENEMIES, rec: TX.REC_LV, key: 'cleared' },
-    2: { name: '第 2 章', names: ['', '熔原入口', '黑砂坡', '灰燼村', '熔岩裂谷', '黑玻璃河畔', '白火祭壇', '赤脈礦道', '熔王階梯', '熔心廊道', '赤脈火口'], enemies: [0, 19, 17, 19, 24, 25, 27, 33, 33, 36, '首領'], rec: [0, 15, 15, 16, 16, 17, 18, 19, 20, 22, 23], key: 'cleared2' }
+    2: { name: '第 2 章', names: ['', '熔原入口', '黑砂坡', '灰燼村', '熔岩裂谷', '黑玻璃河畔', '白火祭壇', '赤脈礦道', '熔王階梯', '熔心廊道', '赤脈火口'], enemies: [0, 19, 17, 19, 24, 25, 27, 33, 33, 36, '首領'], rec: [0, 15, 15, 16, 16, 17, 18, 19, 20, 22, 23], key: 'cleared2' },
+    3: { name: '第 3 章', names: ['', '風崖入口', '懸索橋', '飄葉林道', '巨木根階', '雲海渡廊', '風鈴迴廊', '斷歌石台', '浮島階梯', '歌塚迴旋', '封歌高巢'], enemies: [0, 19, 17, 18, 26, 26, 26, 33, 33, 34, '首領'], rec: [0, 24, 24, 25, 26, 27, 28, 29, 30, 31, 32], key: 'cleared3' }
   };
-  TX.chData = function (ch) { return TX.CHAPTER_DATA[ch === 2 ? 2 : 1]; };
+  TX.chData = function (ch) { return TX.CHAPTER_DATA[ch] || TX.CHAPTER_DATA[1]; };
 })();

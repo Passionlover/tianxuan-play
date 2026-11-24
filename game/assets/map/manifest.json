@@ -148,5 +148,65 @@
   "w": 480,
   "h": 351,
   "magentaPixels": 0
+ },
+ "ch3_giant_tree": {
+  "w": 503,
+  "h": 486,
+  "magentaPixels": 0
+ },
+ "ch3_float_island": {
+  "w": 340,
+  "h": 411,
+  "magentaPixels": 0
+ },
+ "ch3_vine_wall": {
+  "w": 507,
+  "h": 304,
+  "magentaPixels": 0
+ },
+ "ch3_stone_pillars": {
+  "w": 457,
+  "h": 393,
+  "magentaPixels": 0
+ },
+ "ch3_pond_small": {
+  "w": 475,
+  "h": 245,
+  "magentaPixels": 0
+ },
+ "ch3_mossrock": {
+  "w": 438,
+  "h": 314,
+  "magentaPixels": 0
+ },
+ "ch3_treehouse": {
+  "w": 456,
+  "h": 497,
+  "magentaPixels": 0
+ },
+ "ch3_ruin_tower": {
+  "w": 405,
+  "h": 492,
+  "magentaPixels": 0
+ },
+ "ch3_windchime_altar": {
+  "w": 461,
+  "h": 477,
+  "magentaPixels": 0
+ },
+ "ch3_pond_wide": {
+  "w": 496,
+  "h": 256,
+  "magentaPixels": 0
+ },
+ "ch3_pond_bend": {
+  "w": 468,
+  "h": 437,
+  "magentaPixels": 0
+ },
+ "ch3_vine_bridge": {
+  "w": 502,
+  "h": 395,
+  "magentaPixels": 0
  }
 }

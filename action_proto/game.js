@@ -3,9 +3,10 @@
 (function () {
   const W = 390, H = 844, A = '../game/assets/';
   const QS = new URLSearchParams(location.search);
-  const CH_N = QS.get('ch') === '2' ? 2 : 1;
+  const CH_N = QS.get('ch') === '3' ? 3 : QS.get('ch') === '2' ? 2 : 1;
   const IS_CH2 = CH_N === 2;
-  const CHAPTER_BG = IS_CH2 ? 'bg_fire.webp' : 'bg_water.webp';
+  const IS_CH3 = CH_N === 3;
+  const CHAPTER_BG = IS_CH3 ? 'bg_wind.webp' : IS_CH2 ? 'bg_fire.webp' : 'bg_water.webp';
   const WORLD_W = 960, WORLD_H = 1800;
   const ARENA = { x0: 24, x1: WORLD_W - 24, y0: 90, y1: WORLD_H - 40 };
   /* 地圖物件（A3 正式美術）。x,y＝圖的底部中心（腳印所在）；s＝顯示縮放。
@@ -33,9 +34,13 @@
   const CH2_MAP = { bld_cabin: 'ch2_bld_house', bld_lighthouse: 'ch2_altar', rock_cluster: 'ch2_rock_spires', tree_pine: 'ch2_rock_boulder', lake_small: 'ch2_lava_pool', rock_mountain_l: 'ch2_rock_obsidian', lake_harbor: 'ch2_river_bend', rock_cliff: 'ch2_rock_cliff', bld_ruin: 'ch2_bld_ruin', lake_big: 'ch2_river_straight', tree_mixed: 'ch2_rock_lavahill' };
   const ART_CH2 = { ch2_bld_house: [469, 464], ch2_altar: [449, 448], ch2_rock_spires: [429, 438], ch2_rock_boulder: [382, 292], ch2_lava_pool: [470, 213], ch2_rock_obsidian: [483, 475], ch2_river_bend: [426, 374], ch2_rock_cliff: [491, 203], ch2_bld_ruin: [463, 427], ch2_river_straight: [475, 287], ch2_rock_lavahill: [467, 295] };
   const OBJ_DEF_CH2 = { ch2_bld_house: ['building', 0.42, 'rect', 0.92, 0.96], ch2_altar: ['building', 0.42, 'rect', 0.74, 0.96], ch2_rock_spires: ['mountain', 0.42, 'ell', 1.12, 1.0], ch2_rock_boulder: ['mountain', 0.32, 'ell', 1.0, 0.98], ch2_lava_pool: ['lake', 0.55, 'ell', 0.84, 0.62], ch2_rock_obsidian: ['mountain', 0.62, 'ell', 1.24, 1.0], ch2_river_bend: ['lake', 0.50, 'ell', 0.78, 0.62], ch2_rock_cliff: ['mountain', 0.55, 'rect', 0.96, 0.94], ch2_bld_ruin: ['building', 0.42, 'rect', 0.92, 0.96], ch2_river_straight: ['lake', 0.62, 'ell', 0.84, 0.64], ch2_rock_lavahill: ['mountain', 0.55, 'ell', 1.12, 0.92] };
-  const ART = IS_CH2 ? ART_CH2 : ART_CH1;
-  const OBJ_DEF = IS_CH2 ? OBJ_DEF_CH2 : OBJ_DEF_CH1;
-  const PLACE = PLACE_CH1.map(([img, x, y]) => [IS_CH2 ? CH2_MAP[img] : img, x, y]);
+  const CH3_MAP = { bld_cabin: 'ch3_treehouse', bld_lighthouse: 'ch3_windchime_altar', rock_cluster: 'ch3_stone_pillars', tree_pine: 'ch3_mossrock', lake_small: 'ch3_pond_small', rock_mountain_l: 'ch3_giant_tree', lake_harbor: 'ch3_pond_bend', rock_cliff: 'ch3_vine_wall', bld_ruin: 'ch3_ruin_tower', lake_big: 'ch3_pond_wide', tree_mixed: 'ch3_float_island' };
+  const ART_CH3 = { ch3_giant_tree: [503, 486], ch3_float_island: [340, 411], ch3_vine_wall: [507, 304], ch3_stone_pillars: [457, 393], ch3_pond_small: [475, 245], ch3_mossrock: [438, 314], ch3_treehouse: [456, 497], ch3_ruin_tower: [405, 492], ch3_windchime_altar: [461, 477], ch3_pond_wide: [496, 256], ch3_pond_bend: [468, 437] };
+  const OBJ_DEF_CH3 = { ch3_treehouse: ['building', 0.42, 'rect', 0.92, 0.96], ch3_windchime_altar: ['building', 0.42, 'rect', 0.74, 0.96], ch3_stone_pillars: ['mountain', 0.42, 'ell', 1.12, 1.0], ch3_mossrock: ['mountain', 0.32, 'ell', 1.0, 0.98], ch3_pond_small: ['lake', 0.55, 'ell', 0.84, 0.62], ch3_giant_tree: ['mountain', 0.62, 'ell', 1.24, 1.0], ch3_pond_bend: ['lake', 0.50, 'ell', 0.78, 0.62], ch3_vine_wall: ['mountain', 0.55, 'rect', 0.96, 0.94], ch3_ruin_tower: ['building', 0.42, 'rect', 0.92, 0.96], ch3_pond_wide: ['lake', 0.62, 'ell', 0.84, 0.64], ch3_float_island: ['mountain', 0.55, 'ell', 1.12, 0.92] };
+  const ART = IS_CH3 ? ART_CH3 : IS_CH2 ? ART_CH2 : ART_CH1;
+  const OBJ_DEF = IS_CH3 ? OBJ_DEF_CH3 : IS_CH2 ? OBJ_DEF_CH2 : OBJ_DEF_CH1;
+  const CH_MAP = IS_CH3 ? CH3_MAP : IS_CH2 ? CH2_MAP : null;
+  const PLACE = PLACE_CH1.map(([img, x, y]) => [CH_MAP ? CH_MAP[img] : img, x, y]);
   const OBST = PLACE.map(([img, x, y]) => {
     const [t, sc0, kind, fw, fh] = OBJ_DEF[img], [iw, ih] = ART[img], dw = iw * sc0, dh = ih * sc0;
     const hw = dw * fw / 2, hh = dh * fh / 2;
@@ -125,7 +130,7 @@
   const ZOOM = (() => { const z = parseFloat(QS.get('zoom')); return z > 0.3 && z <= 1.2 ? z : 0.65; })(), VIS = ZOOM < 1 ? 1.25 : 1;
   const RS = (() => { const r = parseFloat(QS.get('rs')); return r >= 1 && r <= 3 ? r : (SET.hd ? 2 : 1); })();   // 渲染解析度倍率：網址指定時優先，否則使用設定
   const TIME_SCALE = Number(QS.get('speed')) || 1;
-  const VERSION = '原型 v59（第2章首領）';
+  const VERSION = '原型 v62（第3章首領）';
   const SIM = Number(QS.get('sim')) || 0;   // ?sim=N：加速模擬 N 局，統計勝率
   const GOLD = 0xe8b84a;
   function camShake(dur, amp) { if (SET.shake && sc && sc.cameras && sc.cameras.main) sc.cameras.main.shake(dur, amp); }
@@ -148,6 +153,8 @@
   ROSTER.forEach(id => { const hk = parseFloat(QS.get('hpk')), dk = parseFloat(QS.get('dk')); if (hk > 0) CH[id].maxHp = Math.round(CH[id].maxHp * hk); if (dk > 0) CH[id].dmg = CH[id].dmg * dk; });   // 平衡測試用：?hpk=血量倍率 ?dk=普攻傷害倍率（技能傷害跟著 D 變）
   /* 第2章難度參數（預設＝正式值；?c2=obRes:1,obCd:7 可臨時覆蓋做模擬）。11-22 jun 定案調整：黑曜甲獸 血90→65、受傷×0.6→取消、衝撞冷卻5→7秒；首領第二階段熔痕每秒3→1（11-22 澤恩全章拉平再降）、召喚上限3→2；黑曜甲獸接觸傷害6→4（原值見 design_data）；首領吐息22→17.6、熔岩柱20→16（×0.8，11-22 jun 定案，為了澤恩首領） */
   const C2 = Object.assign({ obHp: 65, obRes: 1, obCd: 7, obDmg: 18, obContact: 4, obWarn: 0.9, healPct: 0.25, healCd: 4, slimeDps: 3, bossLavaDps: 1, summonMax: 2, breathDmg: 17.6, pillarDmg: 16, pillarStand: 4.65 }, Object.fromEntries((QS.get('c2') || '').split(',').filter(Boolean).map(kv => { const [k, v] = kv.split(':'); return [k, parseFloat(v)]; }).filter(([k, v]) => !isNaN(v))));
+  /* 第3章難度參數（預設＝正式值；?c3=鍵:值 可覆蓋做模擬）。11-24 jun 定案調整：飛羽射手箭傷12→6、冷卻4→5.5秒；風羽雀俯衝傷10→6、冷卻3.5→5秒；風壓圈每秒傷3→2；藤纏樹靈接觸傷7→5；第6～9節波次減量（原總數30/40/40/44→26/33/33/34） */
+  const C3 = Object.assign({ finchHp: 44, finchSpd: 72, finchContact: 4, treeHp: 110, treeSpd: 24, treeContact: 5, archerHp: 40, archerSpd: 34, rareHp: 240, bossHp: 1400, bossContact: 12, finchDmg: 6, finchWarn: 0.6, finchLen: 220, finchWidth: 36, finchRange: 300, finchCd: 5, treeCd: 7, treeWarn: 0.8, treeDur: 3, treeR: 90, treePush: 120, treeDps: 2, archerCd: 5.5, archerWarn: 0.8, archerDmg: 6, archerRange: 340, archerLen: 320, bossDashDmg: 24, bossDashWarn: 1.0, bossDashLen: 360, bossDashWidth: 70, bossDashRange: 440, bossDashCd: 7, bossRainN: 8, bossRainR: 55, bossRainSpread: 160, bossRainWarn: 1.0, bossRainDmg: 14, bossRainCd: 8, bossPullR: 260, bossPullWarn: 0.8, bossPullDur: 1.5, bossPullSpeed: 140, bossPullCd: 10, bossRestEvery: 3, bossRestT: 2, bossRestMul: 1.3, bossP2CdMul: 0.8, bossSummonCd: 12, bossSummonN: 2, bossSummonMax: 4, bossReady: 1.5 }, Object.fromEntries((QS.get('c3') || '').split(',').filter(Boolean).map(kv => { const [k, v] = kv.split(':'); return [k, parseFloat(v)]; }).filter(([k, v]) => !isNaN(v))));
   const TUNE = Object.assign({ ozPas: 0.85, ozSh: 10, ozCt: 0.2, ozCtCd: 10, ozAn: 0.3, ozAnCd: 14, sPoolSlow: 0.4, sPoolT: 5, sVorT: 3, sWaveStun: 0.5, sPas: 0.5 }, Object.fromEntries((QS.get('tune') || '').split(',').filter(Boolean).map(kv => { const [k, v] = kv.split(':'); return [k, parseFloat(v)]; })));   // 平衡用機制參數（預設＝正式值；?tune=ozPas:0.9,ozSh:15 可臨時覆蓋做模擬）
   const FR = { idle: 4, atk: 6, hit: 2, win: 4 };
   const MOVE_FR = { walk: 6, run: 6 };   // 目前只有雷歐有移動動作組
@@ -167,7 +174,7 @@
   const REAL = !!QS.get('real') && !SIM;   // real=1 是從選關畫面正式開戰（才會讀寫存檔）；測試網址預設不動存檔
   const SAVE = REAL ? TX.load() : null;
   const HERO_ID = ROSTER[0];
-  const CH_DATA = TX.chData ? TX.chData(CH_N) : (IS_CH2 ? { names: ['', '熔原入口', '黑砂坡', '灰燼村', '熔岩裂谷', '黑玻璃河畔', '白火祭壇', '赤脈礦道', '熔王階梯', '熔心廊道', '赤脈火口'], rec: [0, 15, 15, 16, 16, 17, 18, 19, 20, 22, 23], key: 'cleared2' } : { names: TX.NODE_NAMES, rec: TX.REC_LV, key: 'cleared' });
+  const CH_DATA = (TX.chData && TX.chData(CH_N)) || (IS_CH3 ? { names: ['', '風崖入口', '懸索橋', '飄葉林道', '巨木根階', '雲海渡廊', '風鈴迴廊', '斷歌石台', '浮島階梯', '歌塚迴旋', '封歌高巢'], rec: [0, 24, 24, 25, 26, 27, 28, 29, 30, 31, 32], key: 'cleared3' } : IS_CH2 ? { names: ['', '熔原入口', '黑砂坡', '灰燼村', '熔岩裂谷', '黑玻璃河畔', '白火祭壇', '赤脈礦道', '熔王階梯', '熔心廊道', '赤脈火口'], rec: [0, 15, 15, 16, 16, 17, 18, 19, 20, 22, 23], key: 'cleared2' } : { names: TX.NODE_NAMES, rec: TX.REC_LV, key: 'cleared' });
   const REC_LV = CH_DATA.rec || TX.REC_LV;
   const HERO_LV = REAL ? TX.hero(SAVE, HERO_ID).lv : Math.max(1, Math.min(TX.LV_CAP, parseInt(QS.get('lv'), 10) || REC_LV[NODE_N]));   // 測試網址預設用該節推薦等級（?lv=1 可指定）
   const PL_MUL = TX.lvMul(HERO_LV), REC_MUL = TX.lvMul(REC_LV[NODE_N]);
@@ -192,16 +199,26 @@
     lavarare: { name: '熔岩巨大史萊姆', hp: 220, spd: 28, dmg: 10, r: 46, scale: 0.55, tex: 'slime_giant_lava', crystal: 6, kind: 'rare', attr: '火', contactCd: 1.0, flee: 25 },
     magmaking: { name: '無影熔王', hp: 1200, spd: 28, dmg: 12, r: 54, scale: 1.0, art: 'magmaking', crystal: 10, kind: 'ch2boss', attr: '火' }
   });
+  if (IS_CH3) Object.assign(EN, {
+    windfinch: { name: '風羽雀', hp: C3.finchHp, spd: C3.finchSpd, dmg: C3.finchContact, r: 18, scale: 1.0, art: 'windfinch', crystal: 1, attr: '風', kind: 'ch3finch' },
+    vinetreant: { name: '藤纏樹靈', hp: C3.treeHp, spd: C3.treeSpd, dmg: C3.treeContact, r: 28, scale: 1.0, art: 'vinetreant', crystal: 2, attr: '風', kind: 'ch3treant' },
+    featherarcher: { name: '飛羽射手', hp: C3.archerHp, spd: C3.archerSpd, dmg: 0, r: 22, scale: 1.0, art: 'featherarcher', crystal: 2, attr: '風', kind: 'ch3archer', noContact: true, keep: [220, 280] },
+    windrare: { name: '風靈巨大史萊姆', hp: C3.rareHp, spd: 28, dmg: 10, r: 46, scale: 0.55, tex: 'slime_giant_wind', crystal: 6, kind: 'rare', attr: '風', contactCd: 1.0, flee: 25 },
+    windeagle: { name: '封歌風鷹', hp: C3.bossHp, spd: 28, dmg: C3.bossContact, r: 56, scale: 1.0, art: 'windeagle', crystal: 10, kind: 'ch3boss', attr: '風' }
+  });
   /* 敵人新美術（A5／A6）：側視／正面／背面 × 移動／攻擊；n＝每組幀數，oy＝腳底錨點，sc＝顯示縮放，mv／at＝移動／攻擊動畫幀率 */
   const ENEMY_ART = {
     ashslime: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 12 }, lavaslime: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 12 },
     tideslime: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, gatekeeper: { n: 3, oy: 170 / 176, sc: 1.0, mv: 4, at: 6 },
     mirrormage: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, finbeast: { n: 6, oy: 92 / 96, sc: 1.05, mv: 12, at: 14 }, mirrorbeast: { n: 3, oy: 170 / 176, sc: 1.0, mv: 4, at: 6 },
-    obsidianbeast: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, whitepriest: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, magmaking: { n: 3, oy: 174 / 180, sc: 1.0, mv: 4, at: 6 }
+    obsidianbeast: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, whitepriest: { n: 6, oy: 92 / 96, sc: 1.05, mv: 6, at: 10 }, magmaking: { n: 3, oy: 174 / 180, sc: 1.0, mv: 4, at: 6 },
+    windfinch: { n: 6, oy: 92 / 96, sc: 1.0, mv: 10, at: 12 }, featherarcher: { n: 6, oy: 92 / 96, sc: 1.0, mv: 6, at: 10 }, vinetreant: { n: 6, oy: 92 / 96, sc: 1.0, mv: 6, at: 10 }, windeagle: { n: 3, oy: 174 / 180, sc: 1.0, mv: 4, at: 6 }
   };
   /* 只載入本章用得到的敵人動作圖（11-22 驗收：原本兩章的圖都會載入，拖慢載入） */
-  const CH2_ONLY_ART = ['obsidianbeast', 'whitepriest', 'magmaking'];
-  const ART_KEYS = Object.keys(ENEMY_ART).filter(t => IS_CH2 ? (t === 'lavaslime' || CH2_ONLY_ART.includes(t)) : !CH2_ONLY_ART.includes(t));
+  const ART_KEYS_CH1 = ['ashslime', 'tideslime', 'mirrormage', 'finbeast', 'mirrorbeast'];
+  const ART_KEYS_CH2 = ['lavaslime', 'obsidianbeast', 'whitepriest', 'magmaking'];
+  const ART_KEYS_CH3 = ['windfinch', 'vinetreant', 'featherarcher', 'windeagle'];
+  const ART_KEYS = (IS_CH3 ? ART_KEYS_CH3 : IS_CH2 ? ART_KEYS_CH2 : ART_KEYS_CH1).concat(LEGACY && !IS_CH2 && !IS_CH3 ? ['lavaslime', 'gatekeeper'] : []);
   const WAVES_OLD = [
     [['green', 5]],
     [['green', 4], ['red', 3]],
@@ -232,9 +249,16 @@
     [{ A: 5, B: 1, C: 1 }, { B: 2, C: 2 }, { A: 5, B: 2, C: 2 }, { A: 5, B: 2, C: 2 }, { B: 3, C: 4 }],   // 第9節（黑曜甲獸 原3/4/3/4/6→第一次調整 2/3/3/3/4→澤恩全章拉平 1/2/2/2/3）
     [{ A: 6, B: 2 }, { M: 1 }]
   ];
-  const NODE_NAMES = IS_CH2 ? CH_DATA.names : NODE_NAMES_CH1;
-  const NODE_DEFS = IS_CH2 ? NODE_DEFS_CH2 : NODE_DEFS_CH1;
-  const LETTER = IS_CH2 ? { A: 'lavaslime', B: 'obsidian', C: 'whitepriest', M: 'magmaking' } : { A: 'tide', B: 'mage', C: 'fin', X: 'boss' };
+  const NODE_DEFS_CH3 = [null,
+    [{ A: 5 }, { A: 6 }, { A: 8 }], [{ A: 5 }, { A: 4, B: 1 }, { A: 5, B: 2 }], [{ A: 6 }, { A: 4, C: 1 }, { A: 5, B: 1, C: 1 }],
+    [{ A: 5 }, { A: 4, C: 2 }, { A: 4, B: 1, C: 2 }, { A: 5, B: 1, C: 2 }], [{ A: 4, B: 1, C: 1 }, { B: 2, C: 2 }, { A: 5, B: 1, C: 2 }, { A: 4, B: 2, C: 2 }],
+    [{ A: 6, C: 1 }, { B: 2, C: 2 }, { A: 5, B: 1, C: 2 }, { A: 4, B: 1, C: 2 }], [{ A: 6, B: 1, C: 1 }, { B: 2, C: 2 }, { A: 5, B: 1, C: 2 }, { B: 2, C: 2 }, { A: 6, B: 1, C: 2 }],   // 第6、7節（11-24 難度調整：飛羽射手／藤纏樹靈每波再減；原 6節 30隻、7節 40隻）
+    [{ A: 5, B: 1, C: 1 }, { B: 2, C: 2 }, { A: 5, B: 1, C: 2 }, { B: 2, C: 3 }, { A: 6, B: 1, C: 2 }], [{ A: 5, B: 1, C: 1 }, { B: 2, C: 2 }, { A: 5, B: 2, C: 2 }, { A: 5, B: 2, C: 2 }, { B: 2, C: 3 }],   // 第8、9節（原 40／44 隻；第9節 11-24 驗收模擬後再減，最終 34 隻）
+    [{ A: 6, B: 1 }, { M: 1 }]
+  ];
+  const NODE_NAMES = IS_CH3 || IS_CH2 ? CH_DATA.names : NODE_NAMES_CH1;
+  const NODE_DEFS = IS_CH3 ? NODE_DEFS_CH3 : IS_CH2 ? NODE_DEFS_CH2 : NODE_DEFS_CH1;
+  const LETTER = IS_CH3 ? { A: 'windfinch', B: 'vinetreant', C: 'featherarcher', M: 'windeagle' } : IS_CH2 ? { A: 'lavaslime', B: 'obsidian', C: 'whitepriest', M: 'magmaking' } : { A: 'tide', B: 'mage', C: 'fin', X: 'boss' };
   const WAVES = LEGACY ? WAVES_OLD : NODE_DEFS[NODE_N].map(w => Object.entries(w).map(([k, n]) => [LETTER[k], n]));
   const NODE_HPK = LEGACY ? 1 : (1 + 0.04 * (NODE_N - 1)) * REC_MUL, NODE_DMGK = LEGACY ? 1 : (1 + 0.03 * (NODE_N - 1)) * REC_MUL;   // 每節難度係數
   /* 屬性相剋（沿用既有規則）：剋制 ×1.5、被剋 ×0.5；水→火→風→土→雷→水，光闇互剋 */
@@ -281,8 +305,8 @@
       pl: { x: 480, y: 1690, fx: -1, fy: 0, atkLock: 0, atkCd: 0, moving: false, hits: 0, shieldT: 0, shield: 0, waveT: 0, whirlT: 0, thunderT: 0, bladeA: 0, counterT: 0, dashT: 0, dash: null },
       st: { atk: 0, as: 0, rng: 0, spd: 0, crit: 0, chain: 0, life: 0, shield: 0, wave: 0, counter: 0, dash: 0, poison: 0, para: 0, slow: 0, slashwave: 0, twin: 0, whirl: 0, pierce: 0, thunder: 0, multithunder: 0, blades: 0, burst: 0, magnet: 0 },
       picks: [], dmgBy: {}, lastSrc: '', crystals: 0, level: 1, need: 5, gauge: 0,
-      enemies: [], pickups: [], shots: [], fx: [], tq: [], swaves: [], tg: [], lavaMarks: [], waveT: 0, vuln: 0, cd: [0, 0, 0], lastMove: null,
-      rareWave: (!LEGACY && Math.random() < 0.06 && WAVES.length >= 3 && !WAVES[WAVES.length - 1].some(([t]) => t === 'boss' || t === 'magmaking')) ? 1 + Math.floor(Math.random() * (WAVES.length - 1)) : -1
+      enemies: [], pickups: [], shots: [], fx: [], tq: [], swaves: [], tg: [], lavaMarks: [], windZones: [], waveT: 0, vuln: 0, cd: [0, 0, 0], lastMove: null,
+      rareWave: (!LEGACY && Math.random() < 0.06 && WAVES.length >= 3 && !WAVES[WAVES.length - 1].some(([t]) => t === 'boss' || t === 'magmaking' || t === 'windeagle')) ? 1 + Math.floor(Math.random() * (WAVES.length - 1)) : -1
     };
     if (TUT) G.tut = { phase: 'intro', hint: '', target: { x: 680, y: 1690 }, intro: true, outro: false, retry: 0, stepKills: 0, spawned: [], dodgeAttempts: 0 };
   }
@@ -307,7 +331,8 @@
     this.load.image('bg', A + 'bg_prologue.webp');
     if (TUT) this.load.image('serloan_portrait', A + 'lihui_serloan.png');
     this.load.image('bg_chapter', A + CHAPTER_BG);   // 結算／暫停畫面背景：該章節的戰鬥場景圖（所有角色都載入）
-    (IS_CH2 ? ['rock', 'crack', 'ash', 'glass'] : ['stone', 'crack', 'ash', 'wet']).forEach(n => this.load.image('ground_' + n, A + `map/${IS_CH2 ? 'ch2_' : ''}ground_${n}.png`));
+    const groundSet = IS_CH3 ? ['moss', 'leaf', 'root', 'slab'] : IS_CH2 ? ['rock', 'crack', 'ash', 'glass'] : ['stone', 'crack', 'ash', 'wet'];
+    groundSet.forEach(n => this.load.image('ground_' + n, A + `map/${IS_CH3 ? 'ch3_' : IS_CH2 ? 'ch2_' : ''}ground_${n}.png`));
     ['melee', 'ultimate', 'world'].forEach(n => this.load.spritesheet('fx_' + n, A + `fx_${n}.png`, { frameWidth: 256, frameHeight: 256 }));
     this.load.spritesheet('fx_charge', A + 'fx_charge.png', { frameWidth: 256, frameHeight: 256 });   // A8 蓄力光環（列0金／列1冷，循環）
     Object.keys(ART).forEach(n => this.load.image('map_' + n, A + `map/${n}.png`));
@@ -337,7 +362,7 @@
         for (let i = 1; i <= FR[set]; i++) this.load.image(`${id}_${set}_${i}`, A + `hd_${CH[id].art || id}_1_${set === 'idle' ? 'idleA' : set}_f${i}.png`);
       });
     });
-    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].concat(IS_CH2 ? ['giant_lava'] : []).forEach(c => [1, 2].forEach(i => this.load.image(`slime_${c}_${i}`, A + `hd_slime_${c}_f${i}.png`)));
+    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].concat(IS_CH2 ? ['giant_lava'] : []).concat(IS_CH3 ? ['giant_wind'] : []).forEach(c => [1, 2].forEach(i => this.load.image(`slime_${c}_${i}`, A + `hd_slime_${c}_f${i}.png`)));
     ART_KEYS.forEach(t => ['side', 'front', 'back'].forEach(v => ['move', 'atk'].forEach(set => { for (let i = 1; i <= ENEMY_ART[t].n; i++) this.load.image(`en_${t}_${v}_${set}_${i}`, A + `hd_en_${t}_${v}_${set}_f${i}.png`); })));
   }
 
@@ -363,7 +388,7 @@
       if (HAS_DIAG[id]) ['dn', 'up', 'fr', 'bk'].forEach(dir => Object.keys(DIAG_FR).forEach(set => { const [nm, rate, rep] = DIAG_ANIM[set]; sc.anims.create({ key: `${id}_${dir}_${nm}`, frames: Array.from({ length: DIAG_FR[set] }, (_, i) => ({ key: `${id}_${dir}_${set}_${i + 1}` })), frameRate: rate, repeat: rep }); }));
     });
     ART_KEYS.forEach(t => ['side', 'front', 'back'].forEach(v => { const cf = ENEMY_ART[t]; ['move', 'atk'].forEach(set => sc.anims.create({ key: `en_${t}_${v}_${set}`, frames: Array.from({ length: cf.n }, (_, i) => ({ key: `en_${t}_${v}_${set}_${i + 1}` })), frameRate: set === 'move' ? cf.mv : cf.at, repeat: set === 'move' ? -1 : 0 })); }));
-    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].concat(IS_CH2 ? ['giant_lava'] : []).forEach(c => sc.anims.create({ key: `slime_${c}`, frames: [{ key: `slime_${c}_1` }, { key: `slime_${c}_2` }], frameRate: 3, repeat: -1 }));
+    ['green', 'red', 'blue', 'giant_purple', 'giant_blue'].concat(IS_CH2 ? ['giant_lava'] : []).concat(IS_CH3 ? ['giant_wind'] : []).forEach(c => sc.anims.create({ key: `slime_${c}`, frames: [{ key: `slime_${c}_1` }, { key: `slime_${c}_2` }], frameRate: 3, repeat: -1 }));
     buildGround(); buildFxTextures(); buildFxAnims();
     sc.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
     buildBlock(); drawObstacles(); buildMiniTex();
@@ -419,7 +444,7 @@
     let dmg = base * dmgMul(), crit = !!(o && o.fc) || (!(o && o.nocrit) && Math.random() < 0.05 + 0.12 * G.st.crit);
     if (crit) dmg *= 2;
     const em = elemMul(def().attr, e.def.attr); dmg *= em;   // 屬性相剋
-    if (e.filmT > 0) dmg *= 0.8; if (e.shieldT > 0) dmg *= 0.7; if (e.def.resist != null) dmg *= e.def.resist;   // 水膜、鏡盾、黑曜甲獸減傷
+    if (e.filmT > 0) dmg *= 0.8; if (e.shieldT > 0) dmg *= 0.7; if (e.def.resist != null) dmg *= e.def.resist; if (e.vulnT > 0) dmg *= C3.bossRestMul;   // 水膜、鏡盾、黑曜甲獸減傷；封歌風鷹空拍脆弱
     if (e.paraT > 0 && G.st.para >= 3) dmg *= 1.3;   // 麻痺 Lv3 質變：麻痺期間敵人受到的傷害 +30%
     dmg = Math.round(dmg);
     e.hp -= dmg; e.hurtT = 0.4; e.flashT = 0.08;
@@ -475,7 +500,7 @@
   const inRingOf = (c, R, fn) => G.enemies.forEach(e => { if (!e.dead && dist(e, c) - e.def.r < R) fn(e); });
   function pushAway(e, from, px) { const a = Math.atan2(e.y - from.y, e.x - from.x); e.x = clamp(e.x + Math.cos(a) * px, ARENA.x0, ARENA.x1); e.y = clamp(e.y + Math.sin(a) * px, ARENA.y0, ARENA.y1); resolveSolid(e, e.def.r * 0.7); }
   function pullIn(e, to, px) { const d0 = dist(e, to); if (d0 <= e.def.r + 24) return; const a = Math.atan2(to.y - e.y, to.x - e.x), m = Math.min(px, d0 - e.def.r - 24); e.x += Math.cos(a) * m; e.y += Math.sin(a) * m; resolveSolid(e, e.def.r * 0.7); }
-  const isBoss = e => !!e && (e.type === 'boss' || e.type === 'magmaking' || e.def?.kind === 'ch2boss');
+  const isBoss = e => !!e && (e.type === 'boss' || e.type === 'magmaking' || e.def?.kind === 'ch2boss' || e.def?.kind === 'ch3boss');
   const stunE = (e, t) => { const d = (isBoss(e) || e.def.paraHalf) ? t * 0.5 : t; e.stun = Math.max(e.stun, d); e.paraT = Math.max(e.paraT || 0, d); };   // 麻痺：首領時間減半
   const slowE = (e, f, t) => { const ff = isBoss(e) ? f * 0.5 : f; if (!(e.slowT > 0) || ff >= e.slowF) e.slowF = ff; e.slowT = Math.max(e.slowT || 0, t); };   // 緩速：首領效果減半
   /* D 類狀態（只由「普攻命中」觸發）：毒刃＝每秒傷害、不疊層只刷新；麻痺＝機率定身；緩速＝減速，Lv3 疊滿 3 次凍結 1 秒（之後 5 秒免疫、首領不會被凍結） */
@@ -651,7 +676,7 @@
     if (G.state !== 'play') return;
     if (src && src.lava) {   // 熔痕：地面持續傷害——不給無敵時間、不吃護盾、不擊退、不觸發反擊（11-22 驗收修正）
       if (act().id === 'oz') n = Math.max(1, Math.round(n * TUNE.ozPas));
-      const c = act(); c.hp -= n; G.dmgBy.lava = (G.dmgBy.lava || 0) + n; G.lastSrc = 'lava';
+      const c = act(), key = src.type || 'lava'; c.hp -= n; G.dmgBy[key] = (G.dmgBy[key] || 0) + n; G.lastSrc = key;
       if (SET.dmgNum && !SIM) floatText(G.pl.x, G.pl.y - 80, '-' + Math.round(n * 10) / 10, '#ff9a4a', 14);
       if (c.hp <= 0) { c.hp = 0; c.alive = false; autoSwap(); }
       return;
@@ -764,7 +789,7 @@
     const key = d.tex;
     const sp = d.art ? sc.add.sprite(x, y, `en_${d.art}_front_move_1`).setOrigin(0.5, ENEMY_ART[d.art].oy).setScale(ENEMY_ART[d.art].sc * (d.big || 1) * VIS) : sc.add.sprite(x, y, key + '_1').setOrigin(0.5, 1).setScale(d.scale * VIS);
     sp.play(d.art ? `en_${d.art}_front_move` : key);
-    const enemy = { def: d, type, x, y, hp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), maxHp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), dmgK: NODE_DMGK * (TUT ? 0.5 : 1), life: opts.noFlee ? 0 : d.flee || 0, noFlee: !!opts.noFlee, bossSummon: !!opts.bossSummon, invuln: !!opts.invuln, tutDodge: !!opts.tutDodge, tutBoss: !!opts.tutBoss, filmCd: rand(2, 8), bs: d.kind === 'mirror' ? { clawCd: 2, roarCd: 4, shieldCd: 8, summonCd: 10, castT: 0, p2: false } : d.kind === 'ch2boss' ? { breathCd: 4, pillarCd: 6, lavaCd: 8, summonCd: 10, castT: 0, readyT: 1.5, p2: false } : null, sp, dead: false, atkCd: rand(0.2, 0.8), aoeCd: d.aoe ? rand(1, d.aoe.cd) : 99, tele: 0, tx: 0, ty: 0, flash: 0, stun: 0, lavaCd: IS_CH2 && (type === 'lavaslime' || type === 'lavarare') ? rand(0.1, 1) : 99, obCd: type === 'obsidian' ? rand(1, 2) : 99, ob: null, healCd: type === 'whitepriest' ? 4 : 99 };
+    const enemy = { def: d, type, x, y, hp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), maxHp: Math.round(d.hp * (opts.hpMul || 1) * (TUT ? 0.6 : 1) * NODE_HPK), dmgK: NODE_DMGK * (TUT ? 0.5 : 1), life: opts.noFlee ? 0 : d.flee || 0, noFlee: !!opts.noFlee, bossSummon: !!opts.bossSummon, invuln: !!opts.invuln, tutDodge: !!opts.tutDodge, tutBoss: !!opts.tutBoss, filmCd: rand(2, 8), vulnT: 0, bs: d.kind === 'mirror' ? { clawCd: 2, roarCd: 4, shieldCd: 8, summonCd: 10, castT: 0, p2: false } : d.kind === 'ch2boss' ? { breathCd: 4, pillarCd: 6, lavaCd: 8, summonCd: 10, castT: 0, readyT: 1.5, p2: false } : d.kind === 'ch3boss' ? { dashCd: 0, rainCd: 0, pullCd: 0, summonCd: C3.bossSummonCd, readyT: C3.bossReady, cast: null, actions: 0, restT: 0, vulnT: 0, p2: false } : null, sp, dead: false, atkCd: rand(0.2, 0.8), aoeCd: d.aoe ? rand(1, d.aoe.cd) : 99, tele: 0, tx: 0, ty: 0, flash: 0, stun: 0, lavaCd: IS_CH2 && (type === 'lavaslime' || type === 'lavarare') ? rand(0.1, 1) : 99, obCd: type === 'obsidian' ? rand(1, 2) : 99, ob: null, healCd: type === 'whitepriest' ? 4 : 99, ch3: type === 'windfinch' ? { cd: rand(1, 2.5), cast: null, hit: false } : type === 'vinetreant' ? { cd: rand(2, 4), cast: 0, zone: null } : type === 'featherarcher' ? { cd: rand(1.5, 3), cast: null } : null };
     G.enemies.push(enemy); return enemy;
   }
 
@@ -967,6 +992,112 @@
   function fleeEnemy(e) { e.dead = true; floatText(e.x, e.y - 60, '逃走了…', '#cfd6e6', 16); if (SIM) { e.sp.destroy(); return; } sc.tweens.add({ targets: e.sp, alpha: 0, duration: 300, onComplete: () => e.sp.destroy() }); }
   /* 走特殊行為的敵人也要能接觸攻擊（11-22 驗收：P6 版本跳過了一般流程，熔岩史萊姆／黑曜甲獸／熔岩稀有怪都不會撞人） */
   function contactAtk(e) { if (e.atkCd <= 0 && !e.def.noContact) { e.atkCd = e.def.contactCd || 0.9; playEnemyAtk(e); damagePlayer(e.def.dmg * (e.dmgK || 1), e); } }
+  const CH3_FLAT = 0.6;
+  function zoneIn(z, x, y) { return Math.hypot(x - z.x, (y - z.y) / CH3_FLAT) <= z.r; }
+  function addWindZone(e, x, y) {
+    G.windZones.push({ x, y, r: C3.treeR, life: C3.treeWarn + C3.treeDur, maxLife: C3.treeWarn + C3.treeDur, warn: C3.treeWarn, dmgT: 0, ang: Math.random() * Math.PI * 2, seed: Math.random() * 10, dmgK: e.dmgK || 1 });
+    while (G.windZones.length > 6) G.windZones.shift();
+  }
+  function updateWindZones(dt) {
+    if (!IS_CH3) return;
+    const p = G.pl;
+    G.windZones.forEach(z => {
+      const wasActive = z.life <= C3.treeDur;
+      z.life -= dt; z.dmgT += dt;
+      if (wasActive && z.life > 0 && zoneIn(z, p.x, p.y)) {   // 推開：每幀連續推（每秒 treePush 像素）。11-22 驗收修正：Codex 原寫法放在每秒傷害 tick 裡，實際每秒只推 2 像素
+        let dx = p.x - z.x, dy = (p.y - z.y) / CH3_FLAT, d = Math.hypot(dx, dy); const push = C3.treePush * dt;
+        if (d < 2) { dx = Math.cos(z.ang); dy = Math.sin(z.ang); d = 1; }   // 玩家正好在圈心：往隨機（每圈固定）方向推
+        p.x = clamp(p.x + dx / d * push, ARENA.x0, ARENA.x1); p.y = clamp(p.y + dy / d * push * CH3_FLAT, ARENA.y0, ARENA.y1);
+        resolveSolid(p, 12);
+      }
+      while (z.dmgT >= 1 && z.life > 0) {
+        z.dmgT -= 1;
+        if (wasActive && zoneIn(z, p.x, p.y)) damagePlayer(z.dmgK * C3.treeDps, { x: z.x, y: z.y, type: 'windzone', lava: true });
+      }
+    });
+    G.windZones = G.windZones.filter(z => z.life > 0);
+  }
+  function lineHit(x, y, h) { return hazardContains(h, x, y, 12); }
+  function finchHit(e, x1, y1, x2, y2) { if (!e.ch3.cast.hit && pointSegmentDistance(G.pl.x, G.pl.y, x1, y1, x2, y2) <= C3.finchWidth / 2 + 12) { e.ch3.cast.hit = true; damagePlayer(C3.finchDmg * (e.dmgK || 1), { x: e.x, y: e.y, type: 'finch', bite: true }); } }
+  function resolveArcher(e) {
+    const c = e.ch3.cast; c.shot = true;
+    e.ch3.shots = c.angs.map(a => ({ x: c.x, y: c.y, a, t: 0.2 }));
+    for (const a of c.angs) if (lineHit(G.pl.x, G.pl.y, { band: true, x: c.x, y: c.y, nx: Math.cos(a), ny: Math.sin(a), w: 12, len: C3.archerLen })) damagePlayer(C3.archerDmg * (e.dmgK || 1), { x: e.x, y: e.y, type: 'archer', bite: true });
+  }
+  function stepCh3(e, dt, p, d, dx, dy, sp) {
+    if (e.type === 'windfinch') {
+      const c = e.ch3; c.cd = Math.max(0, c.cd - dt);
+      if (c.cast) {
+        const q = c.cast; q.t -= dt;
+        if (q.phase === 'warn') { if (q.t <= 0) { q.phase = 'dash'; q.t = 0.25; q.left = C3.finchLen; } return true; }
+        if (q.phase === 'retreat') { e.x -= q.nx * sp * dt; e.y -= q.ny * sp * dt; resolveSolid(e, e.def.r * 0.7); if (q.t <= 0) c.cast = null; return true; }
+        const ox = e.x, oy = e.y, move = Math.min(q.left, C3.finchLen * dt / 0.25); let actual = move;
+        for (let i = 1; i <= 8; i++) if (solidAt(ox + q.nx * move * i / 8, oy + q.ny * move * i / 8, e.def.r * 0.7)) { actual = move * (i - 1) / 8; break; }
+        e.x += q.nx * actual; e.y += q.ny * actual; q.left -= actual; finchHit(e, ox, oy, e.x, e.y);
+        if (q.left <= 0 || actual < move - 0.1) { q.phase = 'retreat'; q.t = 1; }
+        return true;
+      }
+      if (c.cd <= 0 && d <= C3.finchRange) { c.cd = C3.finchCd; c.cast = { phase: 'warn', t: C3.finchWarn, nx: dx / d, ny: dy / d, left: C3.finchLen, hit: false }; playEnemyAtk(e); return true; }
+      if (d > e.def.r + 14) chaseP(e, p, dt, sp); else contactAtk(e); return true;
+    }
+    if (e.type === 'vinetreant') {
+      const c = e.ch3; c.cd = Math.max(0, c.cd - dt);
+      if (c.cast > 0) { c.cast -= dt; return true; }
+      if (c.cd <= 0 && !c.zone) { c.cd = C3.treeCd; c.cast = C3.treeWarn; addWindZone(e, p.x, p.y); c.zone = G.windZones[G.windZones.length - 1]; return true; }
+      if (c.zone && c.zone !== 'pending' && c.zone.life <= 0) c.zone = null;
+      if (d > e.def.r + 14) chaseP(e, p, dt, sp); else contactAtk(e); return true;
+    }
+    if (e.type === 'featherarcher') {
+      const c = e.ch3; c.cd = Math.max(0, c.cd - dt);
+      if (c.shots) { c.shots.forEach(s => { s.t -= dt; s.x += Math.cos(s.a) * C3.archerRange * 5 * dt; s.y += Math.sin(s.a) * C3.archerRange * 5 * dt; }); c.shots = c.shots.filter(s => s.t > 0); }
+      if (c.cast) { c.cast.t -= dt; if (c.cast.t <= 0) { resolveArcher(e); c.cast = null; c.cd = C3.archerCd; } return true; }
+      if (c.cd <= 0 && d <= C3.archerRange) { const a = Math.atan2(dy, dx); c.cd = C3.archerCd; c.cast = { t: C3.archerWarn, x: e.x, y: e.y, angs: [a - Math.PI / 9, a, a + Math.PI / 9] }; playEnemyAtk(e); return true; }
+      const [lo, hi] = e.def.keep;
+      if (d < lo) { e.x -= dx / d * sp * dt; e.y -= dy / d * sp * dt; resolveSolid(e, e.def.r * 0.7); } else if (d > hi) chaseP(e, p, dt, sp);
+      return true;
+    }
+    return false;
+  }
+  function bossCh3Done(e) {
+    const b = e.bs; b.cast = null; b.actions++;
+    if (b.actions % C3.bossRestEvery === 0) { b.restT = C3.bossRestT; e.vulnT = C3.bossRestT; if (!SIM) { floatText(e.x, e.y - 92, '空拍', '#e9ffff', 20); ringFx(e.x, e.y - 28, 0xdfffff, 58); } }
+  }
+  function bossCh3Summon(e) {
+    const b = e.bs, n = G.enemies.filter(x => !x.dead && x.bossSummon && x.type === 'windfinch').length;
+    if (n >= C3.bossSummonMax) return;
+    const a = rand(0, Math.PI * 2), r = rand(52, 82), q = spawnEnemy('windfinch', clamp(e.x + Math.cos(a) * r, ARENA.x0 + 30, ARENA.x1 - 30), clamp(e.y + Math.sin(a) * r, ARENA.y0 + 30, ARENA.y1 - 30), { noFlee: true, bossSummon: true });
+    if (!SIM) { burst(q.x, q.y - 18, 12, { tint: 0xb9f5e8, add: false, v0: 30, v1: 120, l0: 220, l1: 480, grav: -40 }); ringFx(q.x, q.y - 18, 0xdfffff, 34); }
+  }
+  function stepCh3Boss(e, dt, p, d, dx, dy, sp) {
+    const b = e.bs, k = e.dmgK || 1, mul = b.p2 ? C3.bossP2CdMul : 1;
+    e.vulnT = Math.max(0, e.vulnT || 0);
+    b.dashCd = Math.max(0, b.dashCd - dt); b.rainCd = Math.max(0, b.rainCd - dt); b.pullCd = Math.max(0, b.pullCd - dt); b.summonCd = Math.max(0, b.summonCd - dt);
+    if (b.readyT > 0) { b.readyT = Math.max(0, b.readyT - dt); if (d > e.def.r + 14) chaseP(e, p, dt, sp); else contactAtk(e); return true; }
+    if (!b.p2 && e.hp <= e.maxHp * 0.5) { b.p2 = true; b.dashCd *= mul; b.rainCd *= mul; b.pullCd *= mul; banner('封歌風鷹　狂風！'); if (!SIM) camShake(160, 0.006); }
+    if (b.p2 && b.summonCd <= 0) { const n = G.enemies.filter(x => !x.dead && x.bossSummon && x.type === 'windfinch').length; if (n < C3.bossSummonMax) { for (let i = 0; i < C3.bossSummonN && G.enemies.filter(x => !x.dead && x.bossSummon && x.type === 'windfinch').length < C3.bossSummonMax; i++) bossCh3Summon(e); b.summonCd = C3.bossSummonCd; } }
+    if (b.restT > 0) { b.restT = Math.max(0, b.restT - dt); e.vulnT = b.restT; return true; }
+    if (b.cast) {
+      const c = b.cast; c.t -= dt;
+      if (c.kind === 'dash') {
+        if (c.phase === 'warn') { if (c.t <= 0) { c.phase = 'dash'; c.t = 0.35; c.left = C3.bossDashLen; } return true; }
+        const ox = e.x, oy = e.y, move = Math.min(c.left, C3.bossDashLen * dt / 0.35); let actual = move, blocked = false;
+        for (let i = 1; i <= 8; i++) if (solidAt(ox + c.nx * move * i / 8, oy + c.ny * move * i / 8, e.def.r * 0.7)) { actual = move * (i - 1) / 8; blocked = true; break; }
+        e.x += c.nx * actual; e.y += c.ny * actual; c.left -= actual;
+        if (!c.hit && pointSegmentDistance(p.x, p.y, ox, oy, e.x, e.y) <= C3.bossDashWidth / 2 + 12) { c.hit = true; damagePlayer(C3.bossDashDmg * k, { x: e.x, y: e.y, type: 'windeagle', bite: true }); }
+        if (c.left <= 0 || blocked) bossCh3Done(e); return true;
+      }
+      if (c.kind === 'pull') {
+        if (c.phase === 'warn') { if (c.t <= 0) { c.phase = 'pull'; c.t = C3.bossPullDur; } return true; }
+        if (d > e.def.r + 12) { const m = Math.min(C3.bossPullSpeed * dt, Math.max(0, d - e.def.r - 12)), a = Math.atan2(e.y - p.y, e.x - p.x), nx = clamp(p.x + Math.cos(a) * m, ARENA.x0, ARENA.x1), ny = clamp(p.y + Math.sin(a) * m, ARENA.y0, ARENA.y1); if (!solidAt(nx, ny, 12)) { p.x = nx; p.y = ny; } resolveSolid(p, 12); }
+        if (c.t <= 0 || d <= e.def.r + 12) bossCh3Done(e); return true;
+      }
+    }
+    if (b.dashCd <= 0 && d <= C3.bossDashRange) { b.dashCd = C3.bossDashCd * mul; b.cast = { kind: 'dash', phase: 'warn', t: C3.bossDashWarn, nx: dx / d, ny: dy / d, left: C3.bossDashLen, hit: false }; playEnemyAtk(e); return true; }
+    if (b.rainCd <= 0) { b.rainCd = C3.bossRainCd * mul; for (let i = 0; i < C3.bossRainN; i++) { const a = rand(0, Math.PI * 2), r = i === 0 ? 0 : rand(0, C3.bossRainSpread), x = i === 0 ? p.x : clamp(p.x + Math.cos(a) * r, ARENA.x0 + C3.bossRainR, ARENA.x1 - C3.bossRainR), y = i === 0 ? p.y : clamp(p.y + Math.sin(a) * r, ARENA.y0 + C3.bossRainR, ARENA.y1 - C3.bossRainR); addTg({ shape: 'circle', x, y, r: C3.bossRainR, dur: C3.bossRainWarn, dmg: C3.bossRainDmg * k, type: 'windeagle', feather: true }); } bossCh3Done(e); return true; }
+    if (b.pullCd <= 0 && d <= C3.bossPullR) { b.pullCd = C3.bossPullCd * mul; b.cast = { kind: 'pull', phase: 'warn', t: C3.bossPullWarn }; playEnemyAtk(e); return true; }
+    if (d > e.def.r + 40) chaseP(e, p, dt, sp); else contactAtk(e);
+    return true;
+  }
   function stepCh2Boss(e, dt, p, d, dx, dy) {
     const b = e.bs, k = e.dmgK || 1;
     b.breathCd = Math.max(0, b.breathCd - dt); b.pillarCd = Math.max(0, b.pillarCd - dt); b.lavaCd = Math.max(0, b.lavaCd - dt); b.summonCd = Math.max(0, b.summonCd - dt);
@@ -1010,6 +1141,10 @@
       if (e.obCd <= 0 && d <= 260) { e.ob = { phase: 'warn', t: C2.obWarn, nx: dx / d, ny: dy / d, left: 260, hit: false }; playEnemyAtk(e); return true; }
       if (d > e.def.r + 14) chaseP(e, p, dt, sp); else contactAtk(e);
       return true;
+    }
+    if (k === 'ch3finch' || k === 'ch3treant' || k === 'ch3archer') return stepCh3(e, dt, p, d, dx, dy, sp);   // 11-22 驗收修正：Codex 原寫法讓飛羽射手永遠走不進 stepCh3（羽毛箭是死碼）
+    if (k === 'ch3boss') {
+      return stepCh3Boss(e, dt, p, d, dx, dy, sp);
     }
     if (k === 'ch2priest') {   // 第 2 章框架：白焰祭司只保持距離，特殊補血留給後續交辦
       const [lo, hi] = e.def.keep;
@@ -1056,15 +1191,21 @@
       } else if (!SIM) playFx('melee', 2, t.x, t.y - 8, { ox: 0.3, oy: 0.5, rot: t.ang, s: t.range / 165, depth: 906 });
     } else {
       hit = Math.hypot(p.x - t.x, p.y - t.y) < t.r;
-      if (!SIM) { playFx('world', 1, t.x, t.y, { oy: 0.62, s: t.r * 2 / 220, add: false, depth: 898, tint: t.pillar ? 0xff6a1c : 0xffffff }); if (t.pillar) burst(t.x, t.y - 12, 16, { tint: 0xff7a24, v0: 50, v1: 180, l0: 220, l1: 520, grav: 120 }); camShake(t.pillar ? 150 : 120, t.pillar ? 0.006 : 0.004); }
+      if (!SIM) { playFx('world', 1, t.x, t.y, { oy: 0.62, s: t.r * 2 / 220, add: false, depth: 898, tint: t.pillar ? 0xff6a1c : 0xffffff }); if (t.pillar) burst(t.x, t.y - 12, 16, { tint: 0xff7a24, v0: 50, v1: 180, l0: 220, l1: 520, grav: 120 }); if (t.feather) { for (let i = 0; i < 8; i++) { const a = rand(0, Math.PI * 2), rr = rand(8, t.r * 0.9); burst(t.x + Math.cos(a) * rr, t.y + Math.sin(a) * rr - 12, 1, { tint: i % 2 ? 0xa8e47d : 0xdfffff, add: false, v0: 25, v1: 75, l0: 260, l1: 520, grav: 35 }); } camShake(110, 0.003); } else camShake(t.pillar ? 150 : 120, t.pillar ? 0.006 : 0.004); }
     }
-    if (hit) { damagePlayer(t.dmg, { x: t.x, y: t.y, type: 'boss', bite: t.shape === 'fan' }); if (t.vuln) G.vuln = 5; }
+    if (hit) { damagePlayer(t.dmg, { x: t.x, y: t.y, type: t.type || 'boss', bite: t.shape === 'fan' }); if (t.vuln) G.vuln = 5; }
   }
   const teleList = (es) => es.filter(e => e.tele > 0).map(e => ({ tx: e.tx, ty: e.ty, r: e.def.aoe.r }))
     .concat(es.filter(e => e.bite && !e.bite.go).map(e => ({ tx: e.x, ty: e.y, r: 78 })))
     .concat(G.tg.map(t => t.shape === 'fan' ? { tx: t.x + Math.cos(t.ang) * t.range / 2, ty: t.y + Math.sin(t.ang) * t.range / 2, r: t.range / 2 + 12 } : { tx: t.x, ty: t.y, r: t.r }))
-    .concat(es.filter(e => e.ob && e.ob.phase === 'warn').map(e => ({ band: true, x: e.x, y: e.y, nx: e.ob.nx, ny: e.ob.ny, w: 25, len: 260, tx: e.x + e.ob.nx * 130, ty: e.y + e.ob.ny * 130, r: 130 })));
+    .concat(es.filter(e => e.ob && e.ob.phase === 'warn').map(e => ({ band: true, x: e.x, y: e.y, nx: e.ob.nx, ny: e.ob.ny, w: 25, len: 260, tx: e.x + e.ob.nx * 130, ty: e.y + e.ob.ny * 130, r: 130 })))
+    .concat(es.filter(e => e.ch3 && e.ch3.cast && e.ch3.cast.phase === 'warn').map(e => ({ band: true, x: e.x, y: e.y, nx: e.ch3.cast.nx, ny: e.ch3.cast.ny, w: C3.finchWidth / 2, len: C3.finchLen, tx: e.x + e.ch3.cast.nx * C3.finchLen / 2, ty: e.y + e.ch3.cast.ny * C3.finchLen / 2, r: C3.finchLen / 2 })))
+    .concat(es.filter(e => e.bs && e.def.kind === 'ch3boss' && e.bs.cast && e.bs.cast.phase === 'warn' && e.bs.cast.kind === 'dash').map(e => ({ band: true, x: e.x, y: e.y, nx: e.bs.cast.nx, ny: e.bs.cast.ny, w: C3.bossDashWidth / 2, len: C3.bossDashLen, tx: e.x + e.bs.cast.nx * C3.bossDashLen / 2, ty: e.y + e.bs.cast.ny * C3.bossDashLen / 2, r: C3.bossDashLen / 2 })))
+    .concat(es.filter(e => e.bs && e.def.kind === 'ch3boss' && e.bs.cast && e.bs.cast.phase === 'warn' && e.bs.cast.kind === 'pull').map(e => ({ tx: e.x, ty: e.y, r: C3.bossPullR })))
+    .concat(es.filter(e => e.ch3 && e.ch3.cast && e.type === 'featherarcher').flatMap(e => e.ch3.cast.angs.map(a => ({ band: true, x: e.ch3.cast.x, y: e.ch3.cast.y, nx: Math.cos(a), ny: Math.sin(a), w: 12, len: C3.archerLen, tx: e.ch3.cast.x + Math.cos(a) * C3.archerLen / 2, ty: e.ch3.cast.y + Math.sin(a) * C3.archerLen / 2, r: C3.archerLen / 2 }))))
+    .concat((G.windZones || []).filter(z => z.life > 0).map(z => ({ tx: z.x, ty: z.y, r: z.r, flat: true, z })));
   function hazardContains(h, x, y, pad) {
+    if (h.flat) return Math.hypot(x - h.tx, (y - h.ty) / CH3_FLAT) < h.r + (pad || 0);
     if (!h.band) return Math.hypot(x - h.tx, y - h.ty) < h.r + (pad || 0);
     const dx = x - h.x, dy = y - h.y, along = dx * h.nx + dy * h.ny, side = Math.abs(dx * h.ny - dy * h.nx);
     return along >= -pad && along <= h.len + pad && side <= h.w + pad;
@@ -1186,9 +1327,9 @@
         G.wave++;
         if (G.wave >= WAVES.length) { endGame(true); return; }
         G.spawnQ = []; WAVES[G.wave].forEach(([t, n]) => { for (let i = 0; i < n; i++) G.spawnQ.push(t); });
-        if (!LEGACY && G.wave === G.rareWave) G.spawnQ.push(IS_CH2 ? 'lavarare' : 'rare');   // 稀有怪：每節 6% 機率中途出現
+        if (!LEGACY && G.wave === G.rareWave) G.spawnQ.push(IS_CH3 ? 'windrare' : IS_CH2 ? 'lavarare' : 'rare');   // 稀有怪：每節 6% 機率中途出現
         G.spawnQ.sort(() => Math.random() - 0.5); G.waveGap = 1.2; G.spawnT = 0; G.waveT = 0; (G.wt = G.wt || []).push(Math.round(G.t));
-        banner(G.wave === 0 && !LEGACY ? `第${NODE_N}節　${NODE_NAMES[NODE_N]}` : G.wave === WAVES.length - 1 ? (WAVES[G.wave].some(([t]) => t === 'boss' || t === 'magmaking') ? 'BOSS' : 'FINAL WAVE') : `WAVE ${G.wave + 1}`);
+        banner(G.wave === 0 && !LEGACY ? `第${NODE_N}節　${NODE_NAMES[NODE_N]}` : G.wave === WAVES.length - 1 ? (WAVES[G.wave].some(([t]) => t === 'boss' || t === 'magmaking' || t === 'windeagle') ? 'BOSS' : 'FINAL WAVE') : `WAVE ${G.wave + 1}`);
       }
     }
   }
@@ -1342,12 +1483,12 @@
     sc.textures.addCanvas(outKey, cv);
   }
   function buildGround() {
-    const groundMain = IS_CH2 ? 'ground_rock' : 'ground_stone', patchNames = IS_CH2 ? ['crack', 'ash', 'glass'] : ['crack', 'ash', 'wet'];
+    const groundMain = IS_CH3 ? 'ground_moss' : IS_CH2 ? 'ground_rock' : 'ground_stone', patchNames = IS_CH3 ? ['leaf', 'root', 'slab'] : IS_CH2 ? ['crack', 'ash', 'glass'] : ['crack', 'ash', 'wet'];
     sc.add.tileSprite(0, 0, WORLD_W, WORLD_H, groundMain).setOrigin(0).setTileScale(0.55).setDepth(-10);
     patchNames.forEach(n => makePatch('ground_' + n, 'patch_' + n, 360));
     // 固定亂數，讓每次開局地面一樣
     let seed = 20261116; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
-    const kinds = IS_CH2 ? ['crack', 'ash', 'glass', 'crack', 'glass', 'ash'] : ['crack', 'ash', 'wet', 'crack', 'wet', 'ash'];
+    const kinds = IS_CH3 ? ['leaf', 'root', 'slab', 'leaf', 'slab', 'root'] : IS_CH2 ? ['crack', 'ash', 'glass', 'crack', 'glass', 'ash'] : ['crack', 'ash', 'wet', 'crack', 'wet', 'ash'];
     for (let k = 0; k < 34; k++) {
       const n = kinds[k % kinds.length], sz = 260 + rnd() * 220;
       const px = rnd() * WORLD_W, py = rnd() * WORLD_H, pa = 0.55 + rnd() * 0.35;
@@ -1360,7 +1501,7 @@
   function buildMiniTex() {
     const K = 0.4, cv = document.createElement('canvas'); cv.width = Math.round(WORLD_W * K); cv.height = Math.round(WORLD_H * K);
     const c = cv.getContext('2d'), src = n => sc.textures.get(n).getSourceImage();
-    const gs = src(IS_CH2 ? 'ground_rock' : 'ground_stone'), tw = gs.width * 0.55 * K, th = gs.height * 0.55 * K;
+    const gs = src(IS_CH3 ? 'ground_moss' : IS_CH2 ? 'ground_rock' : 'ground_stone'), tw = gs.width * 0.55 * K, th = gs.height * 0.55 * K;
     for (let y = 0; y < cv.height; y += th) for (let x = 0; x < cv.width; x += tw) c.drawImage(gs, x, y, tw + 1, th + 1);
     (sc.patchList || []).forEach(q => { c.globalAlpha = q.a; c.drawImage(src('patch_' + q.n), (q.x - q.sz / 2) * K, (q.y - q.sz / 2) * K, q.sz * K, q.sz * K); });
     c.globalAlpha = 1; c.fillStyle = 'rgba(12,10,18,0.18)'; c.fillRect(0, 0, cv.width, cv.height);
@@ -1435,7 +1576,7 @@
     uiButton(W / 2, py + 120, 200, 54, '繼續', () => resumeGame(), { depth: 2103 });
     uiButton(W / 2, py + 186, 200, 54, '重新開始', () => location.reload(), { depth: 2103 });
     if (TUT) uiButton(W / 2, py + 218, 200, 42, TUT_TEXT.ui.skip, () => skipTutorial(), { depth: 2103 });
-    if (REAL) uiButton(W / 2, py + 252, 200, 54, '放棄', () => { location.search = '?pick=' + HERO_ID + (IS_CH2 ? '&ch=2' : ''); }, { depth: 2103 });   // 放棄＝不給經驗金幣、不算通關（jun 11-21）
+    if (REAL) uiButton(W / 2, py + 252, 200, 54, '放棄', () => { location.search = '?pick=' + HERO_ID + (CH_N > 1 ? '&ch=' + CH_N : ''); }, { depth: 2103 });   // 放棄＝不給經驗金幣、不算通關（jun 11-21）
     else uiButton(W / 2, py + 252, 200, 54, '換角色', () => { const q = new URLSearchParams(location.search); q.delete('hero'); q.delete('team'); location.search = q.toString(); }, { depth: 2103 });
     if (REAL) UT(W / 2, py + ph - 14, '放棄不會獲得經驗與金幣', 10, '#8a7a60', 2103).setOrigin(0.5);
     G.pauseObjs = sc.children.list.slice(n0);
@@ -1938,7 +2079,7 @@
       resolveSolid(p, 12);
       faceTo(mx, my);
     } else if (p.atkLock <= 0) tryAttack();
-    updateWaves(dt); updateEnemies(dt); updateLavaMarks(dt); updateShots(dt); updatePickups(dt); updateSkillsTimers(dt); updateSwaves(dt); updateTg(dt); updateTutorial();
+    updateWaves(dt); updateEnemies(dt); updateLavaMarks(dt); updateWindZones(dt); updateShots(dt); updatePickups(dt); updateSkillsTimers(dt); updateSwaves(dt); updateTg(dt); updateTutorial();
     if (SIM && G.t > 100 && !G.dbg1 && G.state === 'play') G.dbg1 = G.enemies.filter(e => !e.dead).map(e => [e.type, Math.round(dist(e, G.pl)), Math.round(e.x), Math.round(e.y), Math.round(e.stun * 10) / 10, e.tele > 0 ? 1 : 0]).concat([['pl', Math.round(G.pl.x), Math.round(G.pl.y), AI.mode]]);
     if (SIM && G.t > 300 && G.state === 'play') { G.lastSrc = 'timeout'; endGame(false); }
   }
@@ -1998,6 +2139,7 @@
       }
       for (const t of tele) { if (t.band) { if (hazardContains(t, x, y, 28)) sc0 -= 560; } else { const dc = Math.hypot(x - t.tx, y - t.ty) - (t.r + 28); if (dc < 0) sc0 -= 300 - dc * 3; } }
       if (lavaMarkHit(x, y)) sc0 -= 520;
+      if ((G.windZones || []).some(z => z.life > C3.treeDur && zoneIn(z, x, y))) sc0 -= 520;
       const m = Math.min(x - ARENA.x0, ARENA.x1 - x, y - ARENA.y0, ARENA.y1 - y);
       if (m < 90) sc0 -= (90 - m) * 1.2;
       if (inForest(x, y)) sc0 -= 30;
@@ -2029,7 +2171,7 @@
       AI.mx = best[0]; AI.my = best[1];
     };
     if (inTele) { AI.mode = 'dodge'; const nr = es.slice().sort((x, y) => dist(x, p) - dist(y, p))[0]; pick(nr ? { x: nr.x, y: nr.y } : null); return; }   // 閃避時順便朝最近敵人靠近
-    if (lavaMarkHit(p.x, p.y) && (hpR < 0.5 || !nearest(R))) { AI.mode = 'dodge'; pick(null); return; }   // 熔痕每秒只 3 傷：射程內有敵人且血量過半就留下輸出（11-22 驗收：原本一踩就閃，幾乎不出手→第9節超時）
+    if ((lavaMarkHit(p.x, p.y) || (G.windZones || []).some(z => z.life > C3.treeDur && zoneIn(z, p.x, p.y))) && (hpR < 0.5 || !nearest(R))) { AI.mode = 'dodge'; pick(null); return; }   // 地面傷害每秒結算：射程內有敵人且血量過半就留下輸出
     if (close) { AI.mode = 'kite'; pick(null); return; }
     if (nearest(R)) { AI.mode = 'attack'; none(); return; }
     // 沒有敵人在射程：先撿近處結晶，否則朝最近敵人靠近到射程邊緣
@@ -2038,7 +2180,7 @@
       if (AI.mode !== 'crystal' || AI.cr !== cr) { AI.cr = cr; AI.cT = 0; } AI.cT += 0.1;
       if (AI.cT > 4) { cr.skip = true; } else { AI.mode = 'crystal'; pick(cr); return; }
     }
-    const tg = es.slice().sort((a, b) => (dist(a, p) * (a.type === 'whitepriest' ? 0.55 : 1)) - (dist(b, p) * (b.type === 'whitepriest' ? 0.55 : 1)))[0];
+    const tg = es.slice().sort((a, b) => (dist(a, p) * (a.type === 'whitepriest' || a.type === 'featherarcher' ? 0.55 : 1)) - (dist(b, p) * (b.type === 'whitepriest' || b.type === 'featherarcher' ? 0.55 : 1)))[0];
     if (tg) { AI.mode = 'chase'; pick({ x: tg.x, y: tg.y }); return; }
     AI.mode = 'wait'; none();
   }
@@ -2148,7 +2290,26 @@
         g.fillStyle(0xff4a2a, 0.18 + 0.24 * pr); g.beginPath(); g.moveTo(e.x + sx, e.y + sy); g.lineTo(e.x - sx, e.y - sy); g.lineTo(fx - sx, fy - sy); g.lineTo(fx + sx, fy + sy); g.closePath(); g.fillPath();
         g.lineStyle(4, 0xff5a40, 0.65 + 0.3 * pu); g.beginPath(); g.moveTo(e.x + sx, e.y + sy); g.lineTo(x2 + sx, y2 + sy); g.lineTo(x2 - sx, y2 - sy); g.lineTo(e.x - sx, e.y - sy); g.closePath(); g.strokePath();
       }
+      if (e.ch3 && e.ch3.cast && (e.ch3.cast.phase === 'warn' || e.type === 'featherarcher')) {   // 11-22 驗收修正：射手的 cast 沒有 phase，原本畫不出預警帶
+        const c = e.ch3.cast, pr = 1 - c.t / (e.type === 'windfinch' ? C3.finchWarn : C3.archerWarn);
+        const bands = e.type === 'windfinch' ? [{ a: Math.atan2(c.ny, c.nx), w: C3.finchWidth, len: C3.finchLen }] : c.angs.map(a => ({ a, w: 24, len: C3.archerLen }));
+        bands.forEach(b => { const nx = Math.cos(b.a), ny = Math.sin(b.a), sx = -ny * b.w / 2, sy = nx * b.w / 2, x2 = e.x + nx * b.len * pr, y2 = e.y + ny * b.len * pr; g.fillStyle(0xb9f5e8, 0.72); g.beginPath(); g.moveTo(e.x + sx, e.y + sy); g.lineTo(e.x - sx, e.y - sy); g.lineTo(x2 - sx, y2 - sy); g.lineTo(x2 + sx, y2 + sy); g.closePath(); g.fillPath(); g.lineStyle(2, 0xe8fff8, 0.85 + 0.1 * Math.sin(G.t * 14)); g.strokePath(); });
+      }
+      if (e.ch3 && e.ch3.cast && e.ch3.cast.phase === 'dash') {
+        const c = e.ch3.cast; for (let i = 1; i <= 3; i++) { const q = i * 18, x = e.x - c.nx * q, y = e.y - c.ny * q; g.fillStyle(0xd8fff5, 0.85); g.fillTriangle(x, y, x - c.ny * 8 - c.nx * 18, y + c.nx * 8 - c.ny * 18, x + c.ny * 8 - c.nx * 18, y - c.nx * 8 - c.ny * 18); }
+      }
+      if (e.bs && e.def.kind === 'ch3boss') {
+        const b = e.bs;
+        if (b.cast && b.cast.phase === 'warn') {
+          const c = b.cast, pr = 1 - c.t / (c.kind === 'dash' ? C3.bossDashWarn : C3.bossPullWarn), pu = 0.5 + 0.5 * Math.sin(G.t * 16);
+          if (c.kind === 'dash') { const sx = -c.ny * C3.bossDashWidth / 2, sy = c.nx * C3.bossDashWidth / 2, x2 = e.x + c.nx * C3.bossDashLen, y2 = e.y + c.ny * C3.bossDashLen; g.fillStyle(0xb9f5e8, 0.72); g.beginPath(); g.moveTo(e.x + sx, e.y + sy); g.lineTo(e.x - sx, e.y - sy); g.lineTo(x2 - sx, y2 - sy); g.lineTo(x2 + sx, y2 + sy); g.closePath(); g.fillPath(); g.lineStyle(3, 0xe8fff8, 0.85 + 0.1 * Math.sin(G.t * 14)); g.strokePath(); const fx = e.x + c.nx * C3.bossDashLen * pr, fy = e.y + c.ny * C3.bossDashLen * pr; g.fillStyle(0xdfffff, 0.35 + 0.35 * pr); g.fillCircle(fx, fy, 7); }
+          else { g.fillStyle(0xb9f5e8, 0.16 + 0.12 * pr); g.fillCircle(e.x, e.y, C3.bossPullR); g.lineStyle(4, 0xe8fff8, 0.65 + 0.3 * pu); g.strokeCircle(e.x, e.y, C3.bossPullR); }
+        }
+        if (b.restT > 0) { const pu = 0.5 + 0.5 * Math.sin(G.t * 12); g.lineStyle(5, 0xdfffff, 0.7 + 0.25 * pu); g.beginPath(); g.arc(e.x, e.y - 28, 48 + 10 * (1 - b.restT / C3.bossRestT), G.t * 2, G.t * 2 + Math.PI * 1.65, false); g.strokePath(); g.lineStyle(2, 0xffffff, 0.9); g.strokeCircle(e.x, e.y - 28, 18 + 6 * pu); }
+      }
+      if (e.ch3 && e.ch3.shots) e.ch3.shots.forEach(s => { g.lineStyle(4, 0xf4fff5, 0.95); g.lineBetween(s.x - Math.cos(s.a) * 15, s.y - Math.sin(s.a) * 15, s.x + Math.cos(s.a) * 15, s.y + Math.sin(s.a) * 15); g.fillStyle(0x9fe6c8, 1); g.fillTriangle(s.x + Math.cos(s.a) * 15, s.y + Math.sin(s.a) * 15, s.x + Math.cos(s.a + 2.5) * 8, s.y + Math.sin(s.a + 2.5) * 8, s.x + Math.cos(s.a - 2.5) * 8, s.y + Math.sin(s.a - 2.5) * 8); });
     });
+    (G.windZones || []).forEach(z => { const active = z.life <= C3.treeDur, pr = active ? 1 : 1 - z.life / z.maxLife, fade = z.life < 0.5 ? z.life / 0.5 : 1, yy = z.r * CH3_FLAT; g.fillStyle(0x9fe9d4, 0.22 * fade); g.fillEllipse(z.x, z.y, z.r * 2, yy * 2); g.lineStyle(2, 0xcfffee, 0.9 * fade); g.strokeEllipse(z.x, z.y, z.r * 2, yy * 2); g.lineStyle(4, 0x8bd7b9, 0.95 * fade); for (let i = 0; i < 3; i++) { const a = G.t * (1.2 + i * 0.2) + z.seed + i * 2; g.beginPath(); g.arc(z.x, z.y, z.r * (0.3 + i * 0.2), a, a + 1.2, false); g.strokePath(); } for (let i = 0; i < 4; i++) { const a = G.t * 1.4 + z.seed + i * Math.PI / 2; const x = z.x + Math.cos(a) * z.r * 0.72, y = z.y + Math.sin(a) * z.r * CH3_FLAT * 0.72; g.fillStyle(0xa8e47d, 0.95 * fade); g.fillTriangle(x, y, x + Math.cos(a + 2.4) * 10, y + Math.sin(a + 2.4) * 10, x + Math.cos(a - 2.4) * 10, y + Math.sin(a - 2.4) * 10); } });
     G.enemies.forEach(e => { if (!e.dead && e.bite && !e.bite.go) { const pu = 0.5 + 0.5 * Math.sin(G.t * 20); g.lineStyle(3, 0xff5a40, 0.5 + 0.4 * pu); g.strokeCircle(e.x, e.y, 78); g.fillStyle(0xff4a2a, 0.12 + 0.2 * (1 - e.bite.t / 0.4)); g.fillCircle(e.x, e.y, 78 * (1 - e.bite.t / 0.4)); } });
     G.enemies.forEach(e => {   // 雷印標記：敵人頭上的雷印符文（Codex 特效，浮現→常駐循環→消散），剩 1.5 秒內閃爍
       const on = !e.dead && e.mark;
@@ -2303,7 +2464,7 @@
     if (SIM) { simRecord(win); return; }
     let rw = null;   // 結算獎勵（只有從選關畫面正式開戰時才結算並存檔）
     if (REAL) {
-      const clearKey = CH_DATA.key || (IS_CH2 ? 'cleared2' : 'cleared'), h = TX.hero(SAVE, HERO_ID), xp = win ? (G.xpGain || 0) : Math.floor((G.xpGain || 0) * TX.LOSE_XP_RATE), first = TUT ? win && SAVE.prologueCleared.indexOf(TUT) < 0 : win && !TX.isCleared(SAVE, NODE_N, CH_N);
+      const clearKey = CH_DATA.key || (CH_N === 3 ? 'cleared3' : IS_CH2 ? 'cleared2' : 'cleared'), h = TX.hero(SAVE, HERO_ID), xp = win ? (G.xpGain || 0) : Math.floor((G.xpGain || 0) * TX.LOSE_XP_RATE), first = TUT ? win && SAVE.prologueCleared.indexOf(TUT) < 0 : win && !TX.isCleared(SAVE, NODE_N, CH_N);
       const fg = first ? (TUT ? 50 * TUT : TX.FIRST_CLEAR_GOLD * NODE_N) : 0, gold = win ? (G.goldGain || 0) + fg : 0, r = TX.addXp(h, xp);
       SAVE[clearKey] = SAVE[clearKey] || []; SAVE.gold += gold; if (first) TUT ? SAVE.prologueCleared.push(TUT) : SAVE[clearKey].push(NODE_N);
       if (TUT === 3 && win) SAVE.tutorialDone = true;
@@ -2354,7 +2515,7 @@
     uiButton(W / 2 - 80, py + ph - 42, 150, 56, '再玩一次', () => location.reload(), { depth: 2003, fs: 18 });
     if (REAL && TUT && win && TUT < 3) uiButton(W / 2 + 80, py + ph - 42, 150, 56, TUT_TEXT.ui.nextNode, () => { location.search = '?hero=' + HERO_ID + '&tut=' + (TUT + 1) + '&real=1'; }, { depth: 2003, fs: 18 });
     else if (REAL && TUT === 3 && win) uiButton(W / 2 + 80, py + ph - 42, 150, 56, TUT_TEXT.ui.toMap, () => { location.search = '?map=' + HERO_ID; }, { depth: 2003, fs: 18 });
-    else if (REAL) uiButton(W / 2 + 80, py + ph - 42, 150, 56, '回選關', () => { location.search = '?pick=' + HERO_ID + (IS_CH2 ? '&ch=2' : ''); }, { depth: 2003, fs: 18 });
+    else if (REAL) uiButton(W / 2 + 80, py + ph - 42, 150, 56, '回選關', () => { location.search = '?pick=' + HERO_ID + (CH_N > 1 ? '&ch=' + CH_N : ''); }, { depth: 2003, fs: 18 });
     else uiButton(W / 2 + 80, py + ph - 42, 150, 56, '換角色', () => { const q = new URLSearchParams(location.search); q.delete('hero'); q.delete('team'); location.search = q.toString(); }, { depth: 2003, fs: 18 });
   }
 
